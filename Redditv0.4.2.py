@@ -35,8 +35,9 @@ class RedditItem(object):
 
 reddit = praw.Reddit(client_id='BHUtkEY0x4vomA', client_secret='MZvTVUs83p8wEN_Z8EU8bIUjGTY',
                      user_agent='pulling posts')
-reddit_link = 'https://www.reddit.com/r/AskReddit/comments/ce54ei/what_did_you_think_was_your_fetish_until_you/'  # input('Paste the url leave one space then press enter\n')
+reddit_link = input('Paste the url leave one space then press enter\n')
 submission = reddit.submission(url=reddit_link)
+desired_vid_len = int(input('Enter your desired video lenth (seconds)'))
 
 
 class RedditTitle:
@@ -980,10 +981,9 @@ fill_rtr_items()
 
 estimate_time()
 
-tyt = 500
-if tyt > estimated_time:
+if desired_vid_len > estimated_time:
     tyt = estimated_time
-    print(f'Input exceeds maximum time of {estimated_time}s for this comment')
+    print(f'Input exceeds maximum time of {estimated_time}s for this comment, setting time to {estimated_time}')
 
 while estimated_time > tyt:
     number_comments -= 1
