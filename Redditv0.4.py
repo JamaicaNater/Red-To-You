@@ -35,21 +35,19 @@ class RedditItem(object):
 
 reddit = praw.Reddit(client_id='BHUtkEY0x4vomA', client_secret='MZvTVUs83p8wEN_Z8EU8bIUjGTY',
                      user_agent='pulling posts')
-
 reddit_link = 'https://www.reddit.com/r/AskReddit/comments/cduruo/whats_a_mild_inconvenience_that_drives_you/'  # input('Paste the url leave one space then press enter\n')
-number_comments = 25  # int(input('Type a Number Between 1 and 25 to represent the Number of Comments\n'))
-threshold = .3  # float(input('Type a number between 0 and 1 to represent the reply threshold (.33 recommended) \n'))
-MIN_SCORE = 50
-
 submission = reddit.submission(url=reddit_link)
-DNE = 'Does Not Exist'
 
 
 class RedditTitle:
     title = submission.title
-    score = submission.score
-    num_com = submission.num_comments
+    body = submission.selftext
+    author = submission.author
     subreddit = submission.subreddit
+    score = submission.score
+    created = datetime.datetime.fromtimestamp(submission.created)
+    num_com = submission.num_comments
+    sub_time = datetime.datetime.now() - created + datetime.timedelta(hours=8)
     try:
         author = submission.author.name
     except:
@@ -59,34 +57,10 @@ class RedditTitle:
         split = textwrap.wrap(self.title, width=width)
         return split
 
-
-# class RedditCreation(RedditItem):
-#     for i in range(number_comments):  # gets all all comments saves them to a string
-#
-#         # Creates the comments if they exist
-#         try:
-#             temp_com = submission.comments[i].replies[0].body.replace('&#x200B', '')
-#             temp_com = re.sub(r"\[(.+)\]\(.+\)", r"\1", temp_com)
-#         except:
-#             temp_com = DNE
-#
-#         # Creates the authors if they exist
-#         if temp_com != DNE:
-#             try:
-#                 temp_name = ('[–] ' + submission.comments[i].replies[0].author.name)  # and indexes them starting at 0
-#             except:
-#                 temp_name = ('[–] ' + '[deleted]')
-#         else:
-#             temp_name = DNE
-#
-#         try:
-#             temp_score = submission.comments[i].replies[0].score
-#         except:
-#             temp_score = DNE
-#         reply_list.append(RedditItem(temp_com, temp_name, temp_score))
-#         del temp_com
-#         del temp_name
-#         del temp_score
+number_comments = 25  # int(input('Type a Number Between 1 and 25 to represent the Number of Comments\n'))
+threshold = .3  # float(input('Type a number between 0 and 1 to represent the reply threshold (.33 recommended) \n'))
+MIN_SCORE = 50
+DNE = 'Does Not Exist'
 
 clip_array = []
 item_list = []
@@ -110,18 +84,21 @@ rWidth = 168
 rtrWidth = 161
 VidFPS = 15
 
-# imported with Pillow
+# Imported with Pillow
 BACKGROUND = Image.open('Static/backgroundblack.jpg').convert('RGBA')
 COMMENT_VOTE_ICON = Image.open('Static/commentupdown.png').convert('RGBA')
 COMMENT_VOTE_ICON = COMMENT_VOTE_ICON.resize((22, 56), Image.ANTIALIAS)
 TITLE_VOTE_ICON = Image.open('Static/titleupdown.png').convert('RGBA')
 COMMENT_VOTE_ICON = COMMENT_VOTE_ICON  # Revisit Later
+SUB_SCORE_ICON = Image.open('Static/sub_up_down.png').convert('RGBA')
+SUB_SCORE_ICON = SUB_SCORE_ICON.resize((28, 73), Image.ANTIALIAS)
 
-# imported with moviepy
+# Imported with moviepy
 TRANSITION = VideoFileClip('Static/NewError.mp4').set_duration(.7).set_fps(VidFPS)
 BACKGROUND_MUSIC = AudioFileClip('Static/background.mp3')
 OUTRO = VideoFileClip('Static/outro.mp4').set_fps(VidFPS)
 
+# EXE Directories
 BALCON_DIR = os.path.dirname(os.path.abspath("balcon.exe"))
 UPLOAD_DIR = os.path.dirname(os.path.abspath('Upload/youtubeuploader_windows_amd64.exe')) + '\\'
 
@@ -178,8 +155,8 @@ def minute_format(num, roundto=2):
     return str(minutes) + ':' + str(seconds)
 
 
-def human_format(num):
-    if num >= 10000:
+def human_format(num, use_at=1000):
+    if num >= use_at:
         magnitude = 0
         while abs(num) >= 1000:
             magnitude += 1
@@ -309,20 +286,14 @@ def create_img(comment):
     # Useful Variables
     line_height = 5
     line_spacing = 25
-    more_spacing = line_spacing
-    small_space = 5
-    medium_space = 25
-    large_space = 35
-    indent_spacing = 65
+    medium_space = 30
+    large_space = 40
 
     image_width = 1920
-    static_space = 75
-    com_img_height = static_space + line_spacing*com_len
     indent = 40
     arrow_indent = indent - 30
     footer_parent = 'permalink  source  embed  save  save-RES  report  give award  reply  hide child comments'
     footer_child = 'permalink  source  embed  save  save-RES  parent  report  give award  reply  hide child comments'
-    comment_spacing = 12
     author = comment_list[index].author
 
     body_font = ImageFont.truetype('CustFont/Verdana.ttf', 20)
@@ -331,7 +302,7 @@ def create_img(comment):
     if bool_reply(comment):
         formatted_reply = reply_list[index].split_self(rWidth)
         rep_len = len(formatted_reply)
-        rep_height = large_space + line_spacing * rep_len
+        rep_height = large_space + line_spacing * rep_len + medium_space
         rep_score = reply_list[index].score
         rep_author = reply_list[index].author
 
@@ -349,20 +320,23 @@ def create_img(comment):
             draw.text((rep_auth_x, rep_auth_y), rep_author, font=author_font, fill="#6bb6ca")
             draw.text((rep_score_x, rep_score_y), f'  {str(rep_score)} points', font=author_font, fill="#B4B4B4")
 
-            img.paste(COMMENT_VOTE_ICON, (indent + arrow_indent, line_height), COMMENT_VOTE_ICON)
-            draw.line((indent, img_height - 5, indent, rep_auth_y), fill="#B4B4B4", width=3)
+            img.paste(COMMENT_VOTE_ICON, (indent - 30, line_height), COMMENT_VOTE_ICON)
+            draw.line((indent-40, img_height - 5, indent-40, rep_auth_y), fill="#B4B4B4", width=3)
 
             for rep_string in formatted_reply:
                 line_height += line_spacing
                 rep_str_num = formatted_reply.index(rep_string)
                 draw.text((indent, line_height), rep_string, font=body_font, fill="#dddddd")
                 img_path = IMG_DIR + str(index) + '.' + str(1) + '.' + str(rep_str_num) + '.png'
+
+                if rep_string == formatted_reply[-1]:
+                    line_height += medium_space
+                    draw.text((indent, line_height), footer_child, font=author_font, fill="#828282")
+
                 temp = BACKGROUND.copy()
                 temp.paste(img, (0, 540 - int(.5 * img_h)), img)
                 temp.save(img_path)
 
-            line_height += medium_space
-            draw.text((indent, line_height), footer_child, font=author_font, fill="#828282")
     else:
         rep_height = 0
 
@@ -372,7 +346,7 @@ def create_img(comment):
     if bool_rtr(comment):
         formatted_rtr = rtr_list[index].split_self(rtrWidth)
         rtr_len = len(formatted_rtr)
-        rtr_height = large_space + line_spacing * rtr_len
+        rtr_height = large_space + line_spacing * rtr_len + medium_space
         rtr_score = rtr_list[index].score
         rtr_author = rtr_list[index].author
 
@@ -389,28 +363,28 @@ def create_img(comment):
 
             draw.text((rtr_auth_x, rtr_auth_y), rtr_author, font=author_font,  fill="#6bb6ca")
             draw.text((rtr_score_x, rtr_score_y), f'  {str(rtr_score)}  points', font=author_font, fill="#B4B4B4")
-            img.paste(COMMENT_VOTE_ICON, (indent + arrow_indent, line_height), COMMENT_VOTE_ICON)
-            draw.line((indent, img_height - 5, indent, rtr_auth_y), fill="#B4B4B4", width=3)
+            img.paste(COMMENT_VOTE_ICON, (indent - 30, line_height), COMMENT_VOTE_ICON)
+            draw.line((indent-40, img_height - 5, indent-40, rtr_auth_y), fill="#B4B4B4", width=3)
 
             for rtrString in formatted_rtr:
                 line_height += line_spacing
                 rtrStringNum = formatted_rtr.index(rtrString)
                 draw.text((indent, line_height), rtrString, font=body_font, fill="#dddddd")
+                if rtrString == formatted_rtr[-1]:
+                    line_height += medium_space
+                    draw.text((indent, line_height), footer_child, font=author_font, fill="#828282")
                 IMGPath = IMG_DIR + str(index) + '.' + str(2) + '.' + str(rtrStringNum) + '.png'
                 temp = BACKGROUND.copy()
                 temp.paste(img, (0, 540 - int(.5 * img_h)), img)
                 temp.save(IMGPath)
 
-            line_height += medium_space
-            draw.text((indent, line_height), footer_child, font=author_font, fill="#828282")
     else:
         rtr_height = 0
         def rtr():
                 pass
 
-
-
-    img_height = static_space + line_spacing*com_len + rep_height + rtr_height
+    potl_com_height = line_height + line_spacing*com_len + medium_space
+    img_height = potl_com_height + rep_height + rtr_height + medium_space
 
     img = Image.new('RGBA', (image_width, img_height), '#222222')
     draw = ImageDraw.Draw(img)
@@ -571,75 +545,93 @@ def replace_me(string, to_replace, replace_with):
     return string
 
 
-def create_title_clip():
-    titleString = RedditTitle.title
-    titlePoints = str(RedditTitle.score)
-    titleCommentsNum = str(RedditTitle.num_com)
-    try:
-        titleAuthor = str(submission.author.name)
-    except:
-        titleAuthor = '[deleted]'
-    submitDate = 'submitted 6 hours ago by'
-    tFooter = ' comments  source  share  save  hide  give award  report  crosspost'
-    sub = '(self.' + str(submission.subreddit) + ')'
-    titleSplit = RedditTitle.split_self(RedditTitle, 70)
-    titleStringNum = len(titleSplit)
+def create_sub():
+    size = 20
+    width = 180
 
-    pointLenth = len(titlePoints)
-    if '.' in titlePoints:
-        pointLenth = pointLenth - 1
-    else:
-        pass
-    #print(pointLenth)
+    author_font = ImageFont.truetype('CustFont/Verdana.ttf', 15)
+    score_font = ImageFont.truetype('CustFont/verdanab.ttf', size - 3)
+    title_font = ImageFont.truetype('CustFont/Verdana.ttf', size)
+    body_font = ImageFont.truetype('CustFont/Verdana.ttf', size - 2)
+    sub_font = ImageFont.truetype('CustFont/Verdana.ttf', size - 6)
+    footer_font = ImageFont.truetype('CustFont/verdanab.ttf', size - 6)
 
-    if pointLenth == 3:
-        pointIndent = 55
-    elif pointLenth == 4:
-        pointIndent = 45
-    elif pointLenth == 5:
-        pointIndent = 35
-    elif pointLenth == 6:
-        pointIndent = 25
-    else:
-        pointIndent = 65
+    formatted_title = textwrap.wrap(RedditTitle.title, width=width)
+    formatted_body = textwrap.wrap(RedditTitle.body, width=width + 8)
+    post_date_by = 'submitted ' + human_time(RedditTitle.sub_time) + ' by '
+    footer = str(RedditTitle.num_com) + ' comments  source  share  save  hide  give award  report  crosspost  ' \
+                                 'hide all child comments'
+    formatted_points = str(human_format(RedditTitle.score)).replace('.0', '')
 
+    # Specify all variables
+    line_spacing = 28
+    more_spacing = line_spacing
+    small_space = 5
+    medium_space = 12
+    large_space = 35
+    indent_spacing = 65
+    line_height = 0
+    sub_height = (15 + line_height + len(formatted_title) * line_spacing + 2 * small_space + large_space +
+                  len(formatted_body) * line_spacing + 2 * medium_space)
 
-    titleIndent = 220
+    sub_img = Image.new('RGBA', (1920, sub_height), '#222222')  # from #222222
+    sub_draw = ImageDraw.Draw(sub_img)
 
-    tHeight = 45 * titleStringNum + 200
-    tWidth = 1920
-    title = Image.new('RGBA', (tWidth, tHeight), '#222222')
-    tdraw = ImageDraw.Draw(title)
+    # Draws rectangle at current height
+    sub_draw.rectangle(
+        [(indent_spacing, line_height), (1920 - 10,
+         15 + line_height + len(formatted_title) * line_spacing + 2 * small_space + large_space
+                                         + len(formatted_body) * line_spacing + 2 * medium_space)], fill='#373737')
 
-    titleFont = ImageFont.truetype('CustFont/Verdana.ttf', 45)
-    midFont = ImageFont.truetype('CustFont/Verdana.ttf', 28)
-    footerFont = ImageFont.truetype('CustFont/verdanab.ttf', 28)
-    pointFont = ImageFont.truetype('CustFont/arial.ttf', 36)
-    for i in titleSplit:
-        currentHeightTitle = 20 + 45 * titleSplit.index(i)
-        tdraw.text((titleIndent, currentHeightTitle), i, font=titleFont, fill="#dedede")
-    selfHeight = currentHeightTitle + 60
-    tdraw.text((titleIndent, selfHeight), sub, font=midFont, fill="#888888")
-    submitHeight = selfHeight + 75
-    sw,sh = midFont.getsize(submitDate)
-    pw, ph = pointFont.getsize(titlePoints)
-    tdraw.text((titleIndent, submitHeight), submitDate, font= midFont, fill="#828282")
-    tdraw.text((titleIndent + sw, submitHeight), ' ' + titleAuthor, font=midFont, fill="#6bb6ca")
-    tdraw.text((titleIndent, tHeight - 50), titleCommentsNum + tFooter, font=footerFont, fill="#828282")
-    tdraw.rectangle([(0,0), (titleIndent-40, tHeight)], fill='#121414', outline='#2E3234', width=4)
-    title.paste(TITLE_VOTE_ICON, (55,20), TITLE_VOTE_ICON)
+    # Draws the score and icon
+    point_len = len(formatted_points.replace('.', ''))
+    indent = 5 * (5 - point_len)
+    sub_img.paste(SUB_SCORE_ICON, (15, line_height + 2), SUB_SCORE_ICON)
+    sub_draw.text((indent, line_height + 26), formatted_points, font=score_font, fill='#646464')
 
-    tdraw.text((pointIndent, 90), titlePoints, font=pointFont, fill='#646464')
-    ttemp = BACKGROUND.copy()
-    ttemp.paste(title, (0,540 - int(.5* tHeight)), title)
+    # Writes each line in the title
+    for line in formatted_title:
+        sub_draw.text((indent_spacing, line_height), line, font=title_font, fill='#dedede')
+        if line == formatted_title[-1]:
+            the_sizex, the_sizey = title_font.getsize(formatted_title[-1])
+            sub_draw.text((indent_spacing + the_sizex + 5, line_height + 5), '(self.' + str(RedditTitle.subreddit) + ')',
+                          font=sub_font, fill='#888888')
+        line_height = line_height + line_spacing
+    del line
 
-    ttemp.save(IMG_DIR + 'title.png')
+    # Adds spacing then writes the post date and author
+    line_height += small_space
+    sub_draw.text((indent_spacing, line_height), post_date_by, font=author_font, fill='#828282')
+    rrx, rry = author_font.getsize(post_date_by)
+    sub_draw.text((indent_spacing + rrx, line_height), ' ' + str(RedditTitle.author), font=author_font, fill='#6a98af')
+    line_height += small_space
 
+    if RedditTitle.body != '':
+        # Draws a rectangle at line spacing + large space
+        # large_space - small_space is used to negate the previous addition to line height
+        line_height += large_space
+        sub_draw.rectangle([indent_spacing, line_height - medium_space, 1920 - 100, small_space + line_height +
+                            len(formatted_body) * line_spacing], fill=None, outline='#cccccc', width=1)
+
+        # Creates Text Body
+        for line in formatted_body:
+            sub_draw.text((indent_spacing + 10, line_height), line, font=body_font, fill='#dddddd')
+            line_height = line_height + line_spacing
+        del line
+        more_spacing = 0
+
+    # Places Space Then Draws Footer
+
+    line_height += medium_space + more_spacing
+    sub_draw.text((indent_spacing, line_height), footer, font=footer_font, fill='#828282')
+
+    sub_img.show()
+
+    sub_img.save(IMG_DIR + 'title.png')
     filename = TXT_DIR + 'title.txt'
     myFile = open(filename, 'w', encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
-    myFile.write(replace_me(titleString, aud_rep, aud_rep_with))
+    myFile.write(replace_me(RedditTitle.title, aud_rep, aud_rep_with))
     myFile.close()
-
 
     os.chdir(BALCON_DIR)  # changes command line directory for the balcon utility
     tFile = 'title.txt'
@@ -689,17 +681,6 @@ def cleanup():
 
 
 def create_thumbnail():
-    def human_format(num):
-        if num >= 1000:
-            magnitude = 0
-            while abs(num) >= 1000:
-                magnitude += 1
-                num /= 1000.0
-            # add more suffixes if you need them
-            return '%.1f%s' % (num, ['', 'K', 'M', 'G', 'T', 'P'][magnitude])
-        else:
-            return num
-
     def color_options():
         backChoice = 2# int(input('\nType your background color option [0 = Transparent, 1 = Default, 2 = Black]\n'))
         if backChoice == 0:
@@ -993,7 +974,7 @@ print(threshold)
 
 dynamic_music()
 
-final = [create_title_clip()]
+final = [create_sub()]
 
 thread = []
 for com in str_comment_list[:number_comments]:
@@ -1026,12 +1007,12 @@ print('\n \nActual Video Lenth is: ' + minute_format(final.duration) + ' / ' + s
       weak + ' / ' + str(strong) + '%' + ' from ' + minute_format(estimatedTime) + ' / ' + str(final.duration) + 's')
 print('\n')
 metadata()
-# final.write_videofile(fullVideoPath, fps=VidFPS, threads=16, preset='ultrafast')
-#
-# shutil.copy2(fullVideoPath, UPLOAD_DIR)
-# shutil.copy2(VID_DIR + 'thumb.png', UPLOAD_DIR)
-#
-# # upload_video()
+final.write_videofile(fullVideoPath, fps=VidFPS, threads=16, preset='ultrafast')
+
+shutil.copy2(fullVideoPath, UPLOAD_DIR)
+shutil.copy2(VID_DIR + 'thumb.png', UPLOAD_DIR)
+
+# upload_video()
 # data_collection()
-# cleanup()
+cleanup()
 
