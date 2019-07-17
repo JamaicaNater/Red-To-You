@@ -507,7 +507,7 @@ def createClip(comment):
             iClip1.append(Clip)
             #print(path)
 
-        s1 = '\n    done reply: ' + str(index)
+        s1 = '\n\tdone reply: ' + str(index)
         iClip1 = concatenate_videoclips(iClip1)
         iClip1 = iClip1.set_audio(aClip1)
         cClip.append(iClip1)
@@ -522,7 +522,7 @@ def createClip(comment):
             Clip = ImageClip(path).set_duration(factor * aClip2.duration)
             iClip2.append(Clip)
             #print(path)
-        s2 = '\n        done rtr: ' + str(index)
+        s2 = '\n\t\tdone rtr: ' + str(index)
         iClip2 = concatenate_videoclips(iClip2)
         iClip2 = iClip2.set_audio(aClip2)
         cClip.append(iClip2)
@@ -625,27 +625,28 @@ def create_sub():
     line_height += medium_space + more_spacing
     sub_draw.text((indent_spacing, line_height), footer, font=footer_font, fill='#828282')
 
-    sub_img.show()
+    temp = BACKGROUND.copy()
+    temp.paste(sub_img, (0, 540 - int(.5 * sub_height)), sub_img)
 
-    sub_img.save(IMG_DIR + 'title.png')
+    temp.save(IMG_DIR + 'title.png')
     filename = TXT_DIR + 'title.txt'
-    myFile = open(filename, 'w', encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
-    myFile.write(replace_me(RedditTitle.title, aud_rep, aud_rep_with))
-    myFile.close()
+    title_txt_file = open(filename, 'w', encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
+    title_txt_file.write(replace_me(RedditTitle.title, aud_rep, aud_rep_with))
+    title_txt_file.close()
 
     os.chdir(BALCON_DIR)  # changes command line directory for the balcon utility
-    tFile = 'title.txt'
-    wFile = 'title.wav'
-    command = 'balcon -f "Subs\Sub1\Txt\%s"' % tFile + ' -w "Subs\Sub1\Wav\%s"' % wFile + ' -n "ScanSoft Daniel_Full_22kHz"'
-    os.system(command)
+    txt_file = 'title.txt'
+    wav_file = 'title.wav'
+    balcom = f'balcon -f "Subs\\Sub1\\Txt\\{txt_file}" -w "Subs\\Sub1\\Wav\\{wav_file}" -n "ScanSoft Daniel_Full_22kHz"'
+    os.system(balcom)
     while not os.path.isfile(WAV_DIR + 'title.wav'):
         time.sleep(.12)
 
-    titleAClip = AudioFileClip(WAV_DIR + 'title.wav')
-    titleIClip = ImageClip(IMG_DIR + 'title.png').set_duration(titleAClip.duration)
-    titleClip = titleIClip.set_audio(titleAClip)
-    titleClip = concatenate_videoclips([titleClip, TRANSITION])
-    return titleClip
+    title_aclip = AudioFileClip(WAV_DIR + 'title.wav')
+    title_iclip = ImageClip(IMG_DIR + 'title.png').set_duration(title_aclip.duration)
+    title_vclip = title_iclip.set_audio(title_aclip)
+    title_vclip = concatenate_videoclips([title_vclip, TRANSITION])
+    return title_vclip
 
 
 def cleanup():
@@ -673,7 +674,7 @@ def cleanup():
     if not os.path.isdir(VID_DIR):
         os.mkdir(VID_DIR)
         print("VID DNE ... Making VID")
-    if del_vid == True and os.path.isdir(VID_DIR):
+    if del_vid and os.path.isdir(VID_DIR):
         shutil.rmtree(VID_DIR)
         print('Removed VID')
         os.mkdir(VID_DIR)
@@ -698,23 +699,23 @@ def create_thumbnail():
     # dif = datetime.datetime.utcnow() - date
     # print(dif)
 
-    thumbSubreddit = 'r/' + str(RedditTitle.subreddit)
-    thumbAuthor = 'u/' + str(RedditTitle.author)
-    thumbScore = int(RedditTitle.score)
-    thumbNumCom = int(RedditTitle.num_com)
+    subreddit = 'r/' + str(RedditTitle.subreddit)
+    author = 'u/' + str(RedditTitle.author)
+    score = int(RedditTitle.score)
+    num_com = int(RedditTitle.num_com)
     title = RedditTitle.title.replace('/', ' ')
     thumbnail = Image.new('RGBA', (1920, 1080), color_options())  # from #222222
-    thumbDraw = ImageDraw.Draw(thumbnail)
+    thumb_draw = ImageDraw.Draw(thumbnail)
     width = 31
-    formatedTitle = textwrap.wrap(title, width=width)
+    formated_title = textwrap.wrap(title, width=width)
 
-    askredditIcon = Image.open('Thumbnail/askreddit.png').resize((100, 100), Image.ANTIALIAS)  # move later
-    updownVote = Image.open('Thumbnail/upvotedownvote.png').convert('RGBA')
-    updownVote = updownVote.resize((440, 400), Image.ANTIALIAS)
-    commentIcon = Image.open('Thumbnail/commenticon.png')
-    commentIcon = commentIcon.resize((180, 160), Image.ANTIALIAS)
+    ASKREDDIT_ICON = Image.open('Thumbnail/askreddit.png').resize((100, 100), Image.ANTIALIAS)  # move later
+    UPDOWNVOTE = Image.open('Thumbnail/upvotedownvote.png').convert('RGBA')
+    UPDOWNVOTE = UPDOWNVOTE.resize((440, 400), Image.ANTIALIAS)
+    COMMENT_ICON = Image.open('Thumbnail/commenticon.png')
+    COMMENT_ICON = COMMENT_ICON.resize((180, 160), Image.ANTIALIAS)
 
-    iconW, iconH = askredditIcon.size
+    iconW, iconH = ASKREDDIT_ICON.size
 
     size = 90
     subFont = ImageFont.truetype('CustFont/NimbusSanL-Reg.ttf', 75)
@@ -727,20 +728,20 @@ def create_thumbnail():
     indentSpacing = 40
     pointX, pointY = -40, 720
 
-    thumbnail.paste(commentIcon, (300, 850), commentIcon)
-    thumbnail.paste(updownVote, (pointX, pointY), updownVote)
+    thumbnail.paste(COMMENT_ICON, (300, 850), COMMENT_ICON)
+    thumbnail.paste(UPDOWNVOTE, (pointX, pointY), UPDOWNVOTE)
     thumbDraw.text((iconW + indentSpacing + 30, 120), postedAuthor, font=author_font, fill='#818384')
-    thumbnail.paste(askredditIcon, (40, 40), askredditIcon)
+    thumbnail.paste(ASKREDDIT_ICON, (40, 40), ASKREDDIT_ICON)
     thumbDraw.text((iconW + indentSpacing + 30, 40), thumbSubreddit, font=subFont)
     thumbDraw.text((90, 910), str(human_format(thumbScore)), font=scoreFont, fill='#FF8C60')
     thumbDraw.text((500, 900), str(human_format(thumbNumCom)) + '  Comments', font=scoreFont, fill='#818384')
 
     lineHeight = bodyBaseHeight
-    #print(str(len(formatedTitle) * (size + line_spacing)))
+    # print(str(len(formatedTitle) * (size + line_spacing)))
     count_1 = 0
     count_2 = 0
-    while (not 1020 <= len(formatedTitle) * (size + line_spacing) <= 1200):
-        while (len(formatedTitle) * (size + line_spacing) >= 1200):
+    while not 1020 <= len(formatedTitle) * (size + line_spacing) <= 1200:
+        while len(formatedTitle) * (size + line_spacing) >= 1200:
             count_1 = count_1 + 1
             size = size - 2
             line_spacing = line_spacing - 2
@@ -748,7 +749,7 @@ def create_thumbnail():
             formatedTitle = textwrap.wrap(title, width=width)
             if (count_1 >= 35):
                 break
-        while (len(formatedTitle) * (size + line_spacing) <= 1020):
+        while len(formatedTitle) * (size + line_spacing) <= 1020:
             count_2 = count_2 + 1
             size = size + 2
             line_spacing = line_spacing + 2
@@ -756,9 +757,9 @@ def create_thumbnail():
             formatedTitle = textwrap.wrap(title, width=width)
             if (count_2 >= 35):
                 break
-        if (count_1 >= 35):
+        if count_1 >= 35:
             break
-        if (count_2 >= 35):
+        if count_2 >= 35:
             break
     # print(str(len(formatedTitle) * (size + line_spacing)))
     # print(count_1, count_2)
@@ -933,8 +934,8 @@ def upload_video():
     print(command)
 
 
-aud_rep, aud_rep_with = ['’', '‘', '”', '“', '*', ';', '^', 'coworker', 'Coworker', 'tbh', 'omg'], \
-                        ["'", "'", '"', '"', '', '', '', 'co-worker', 'co-worker', 'to be honest', 'oh my god']
+aud_rep, aud_rep_with = ['’', '‘', '”', '“', '*', ';', '^', '\\', '/', '_', 'coworker', 'Coworker', 'tbh', 'omg'], \
+                        ["'", "'", '"', '"', '', '', '', '', '', ' ', 'co-worker', 'co-worker', 'to be honest', 'oh my god']
 viz_rep, viz_rep_with = [], []
 all_rep, all_rep_with = ['&#x200B'], ['']
 
