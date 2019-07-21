@@ -96,7 +96,7 @@ def cc(s):
 
 
 def human_time(post_datetime):
-    dif = post_datetime - datetime.datetime.now() + datetime.timedelta(hours=8)
+    dif = post_datetime - datetime.datetime.now()  # + datetime.timedelta(hours=8)
     seconds = dif.total_seconds()
     minutes = seconds / 60
     hours = minutes / 60
@@ -279,14 +279,8 @@ def fill_rtr_items():
 
 
 def create_img(comment):
-    index = str_comment_list.index(comment)                           # add text wrapping to string
-    formatted_comment = comment_list[index].split_self(cWidth)        # text values are separated into lines,
-    com_len = len(formatted_comment)                                  # this gets the total number of lines
-
-    author = comment_list[index].author
-    score = comment_list[index].score
-    formatted_time = f'{comment_list[index].time_ago}'
-    formatted_points = f'  {str(score)} points  '
+    index = str_comment_list.index(comment)
+    child = False
 
     # Useful Variables
     line_height = 5
@@ -385,7 +379,7 @@ def create_img(comment):
 
             draw.text((rtr_auth_x, rtr_auth_y), rtr_author, font=author_font,  fill=AUTHOR_HEX)
             draw.text((rtr_score_x, rtr_score_y), formatted_points_rtr, font=author_font, fill=SCORE_HEX)
-            draw.text((time_x, time_y), formatted_time_rtr, font=time_font, fill=SCORE_HEX)
+            draw.text((time_x, time_y), formatted_time_rtr, font=time_font, fill=FOOTER_HEX)
 
             img.paste(COMMENT_VOTE_ICON, (indent - 30, line_height), COMMENT_VOTE_ICON)
             draw.line((indent-40, img_height - 5, indent-40, rtr_auth_y), fill="#B4B4B4", width=3)
@@ -408,12 +402,20 @@ def create_img(comment):
         def rtr():
             pass
 
+    formatted_comment = comment_list[index].split_self(cWidth)        # text values are separated into lines,
+    com_len = len(formatted_comment)                                  # this gets the total number of lines
+
     # Potential comment height; this makes and educated guess at the comments size
     ptnl_com_height = line_height + line_spacing*com_len + medium_space
     img_height = ptnl_com_height + rep_height + rtr_height + medium_space
 
     img = Image.new('RGBA', (image_width, img_height), '#222222')
     draw = ImageDraw.Draw(img)
+
+    author = comment_list[index].author
+    score = comment_list[index].score
+    formatted_time = f'{comment_list[index].time_ago}'
+    formatted_points = f'  {str(score)} points  '
 
     # Gets size of several objects for later use
     img_w, img_h = img.size
@@ -425,25 +427,39 @@ def create_img(comment):
     tm_x, tm_y = (scr_x + scr_w, line_height)
     
     # Draws the header for the comment
-    draw.text((auth_x, auth_y), author, font=author_font, fill=AUTHOR_HEX)
-    draw.text((scr_x, scr_y), formatted_points, font=author_font, fill=SCORE_HEX)
-    draw.text((tm_x, tm_y), formatted_time, font=time_font, fill=FOOTER_HEX)
+    def comment():
+        nonlocal line_spacing
+        nonlocal line_height
+        nonlocal indent
+        nonlocal child
 
-    img.paste(COMMENT_VOTE_ICON, (arrow_indent, line_height), COMMENT_VOTE_ICON)
-    
-    for string in formatted_comment:
-        line_height += line_spacing
-        string_num = formatted_comment.index(string)
-        draw.text((indent, line_height), string, font=body_font, fill=BODY_HEX)
-        img_path = IMG_DIR + str(index) + '.' + str(0) + '.' + str(string_num) + '.png'
+        if child:
+            line_height += large_space
+            indent += 40
 
-        temp = BACKGROUND.copy()
-        temp.paste(img, (0, 540 - int(.5 * img_h)), img)
-        temp.save(img_path)
+            draw.line((indent-40, img_height - 5, indent-40, rtr_auth_y), fill="#B4B4B4", width=3)
 
-    line_height += medium_space
-    draw.text((indent, line_height), footer_parent, font=author_font, fill=FOOTER_HEX)
+        draw.text((auth_x, auth_y), author, font=author_font, fill=AUTHOR_HEX)
+        draw.text((scr_x, scr_y), formatted_points, font=author_font, fill=SCORE_HEX)
+        draw.text((tm_x, tm_y), formatted_time, font=time_font, fill=FOOTER_HEX)
 
+        img.paste(COMMENT_VOTE_ICON, (arrow_indent, line_height), COMMENT_VOTE_ICON)
+
+        for string in formatted_comment:
+            line_height += line_spacing
+            string_num = formatted_comment.index(string)
+            draw.text((indent, line_height), string, font=body_font, fill=BODY_HEX)
+            img_path = IMG_DIR + str(index) + '.' + str(0) + '.' + str(string_num) + '.png'
+
+            temp = BACKGROUND.copy()
+            temp.paste(img, (0, 540 - int(.5 * img_h)), img)
+            temp.save(img_path)
+
+        line_height += medium_space
+        draw.text((indent, line_height), footer_parent, font=author_font, fill=FOOTER_HEX)
+        child = True
+
+    comment()
     reply()
     rtr()
 
