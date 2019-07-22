@@ -19,10 +19,11 @@ import itertools
 
 
 class RedditItem(object):
-    def __init__(self, string, author, score):
+    def __init__(self, string, author, score, time_ago):
         self.string = string
         self.author = author
         self.score = score
+        self.time_ago = time_ago
 
     def split_self(self, width):
         split = textwrap.wrap(self.string, width=width)
@@ -33,42 +34,10 @@ class RedditItem(object):
         return len(split_len)
 
 
-reddit = praw.Reddit(client_id='BHUtkEY0x4vomA', client_secret='MZvTVUs83p8wEN_Z8EU8bIUjGTY',
-                     user_agent='pulling posts')
-reddit_link = 'https://www.reddit.com/r/AskReddit/comments/ce54ei/what_did_you_think_was_your_fetish_until_you/'  # input('Paste the url leave one space then press enter\n')
-submission = reddit.submission(url=reddit_link)
-
-
-class RedditTitle:
-    title = submission.title
-    body = submission.selftext
-    author = submission.author
-    subreddit = submission.subreddit
-    score = submission.score
-    created = datetime.datetime.fromtimestamp(submission.created)
-    num_com = submission.num_comments
-    sub_time = datetime.datetime.now() - created + datetime.timedelta(hours=8)
-    try:
-        author = submission.author.name
-    except:
-        author = '[–] ' + '[deleted]'
-
-    def split_self(self, width):
-        split = textwrap.wrap(self.title, width=width)
-        return split
-
-
 number_comments = 25  # int(input('Type a Number Between 1 and 25 to represent the Number of Comments\n'))
 threshold = .3  # float(input('Type a number between 0 and 1 to represent the reply threshold (.33 recommended) \n'))
 MIN_SCORE = 50
 DNE = 'Does Not Exist'
-
-clip_array = []
-item_list = []
-comment_list = []
-str_comment_list = []
-reply_list = []
-rtr_list = []
 
 # Keep static, folders deleted on exit
 IMG_DIR = 'Subs/Sub1/Img/'
@@ -76,14 +45,14 @@ WAV_DIR = 'Subs/Sub1/Wav/'
 TXT_DIR = 'Subs/Sub1/Txt/'
 VID_DIR = 'Subs/Vid/'
 
-vid_name = 'Final'
-vid_extension = '.mp4'
-fullVideoPath = VID_DIR + vid_name + vid_extension
+# EXE Directories
+BALCON_DIR = os.path.dirname(os.path.abspath("balcon.exe"))
+UPLOAD_DIR = os.path.dirname(os.path.abspath('Upload/youtubeuploader_windows_amd64.exe')) + '\\'
 
 cWidth = 175
 rWidth = 168
 rtrWidth = 161
-VidFPS = 15
+VID_FPS = 15
 
 # Imported with Pillow
 BACKGROUND = Image.open('Static/backgroundblack.jpg').convert('RGBA')
@@ -99,6 +68,14 @@ UPDOWNVOTE = Image.open('Thumbnail/upvotedownvote.png').convert('RGBA')
 UPDOWNVOTE = UPDOWNVOTE.resize((440, 400), Image.ANTIALIAS)
 COMMENT_ICON = Image.open('Thumbnail/commenticon.png')
 COMMENT_ICON = COMMENT_ICON.resize((180, 160), Image.ANTIALIAS)
+# Imported with Pillow - Gildings
+gild_w, gild_h = (15, 15)
+PLATINUM = Image.open('Static/platinum.png')
+PLATINUM = PLATINUM.resize((gild_w, gild_h), Image.ANTIALIAS)
+GOLD = Image.open('Static/gold.png')
+GOLD = GOLD.resize((gild_w, gild_h), Image.ANTIALIAS)
+SILVER = Image.open('Static/silver.png')
+SILVER = SILVER.resize((gild_w, gild_h), Image.ANTIALIAS)
 
 # Lists all the hex code for fill
 AUTHOR_HEX = '#6a98af'
@@ -110,21 +87,17 @@ TITLE_HEX = '#dedede'
 BIG_SCORE_HEX = '#646464'
 
 # Imported with moviepy
-TRANSITION = VideoFileClip('Static/NewError.mp4').set_duration(.7).set_fps(VidFPS)
-BACKGROUND_MUSIC = AudioFileClip('Static/background.mp3')
-OUTRO = VideoFileClip('Static/outro.mp4').set_fps(VidFPS)
-
-# EXE Directories
-BALCON_DIR = os.path.dirname(os.path.abspath("balcon.exe"))
-UPLOAD_DIR = os.path.dirname(os.path.abspath('Upload/youtubeuploader_windows_amd64.exe')) + '\\'
+TRANSITION = VideoFileClip('Static/NewError.mp4').set_duration(.7).set_fps(VID_FPS)
+OUTRO = VideoFileClip('Static/outro.mp4').set_fps(VID_FPS)
 
 
 def cc(s):
     return list(''.join(t) for t in itertools.product(*zip(s.lower(), s.upper())))
 
 
-def human_time(reddit_time):
-    seconds = reddit_time.total_seconds()
+def human_time(post_datetime):
+    dif = datetime.datetime.now() - post_datetime + datetime.timedelta(hours=8)
+    seconds = dif.total_seconds()
     minutes = seconds / 60
     hours = minutes / 60
     if int(hours) < 1:
@@ -210,6 +183,10 @@ def bool_rtr(comment):
         return False
 
 
+def fill_all(class_object):
+    
+
+
 def fill_comment_items():
     for i in range(number_comments):  # gets all all comments saves them to a string
         # Creates the comments if they exist
@@ -217,21 +194,29 @@ def fill_comment_items():
             temp_com = replace_me(submission.comments[i].body, all_rep, all_rep_with)
             temp_com = re.sub(r"\[(.+)\]\(.+\)", r"\1", temp_com)
         except:
-            temp_com = ('[–] ' + '[deleted]')
+            temp_com = DNE
 
         # Creates the authors if they exist
-        try:
-            temp_name = ('[–] ' + submission.comments[i].author.name)  # and indexes them starting at 0
-        except:
-            temp_name = ('[–] ' + '[deleted]')
+        if temp_com != DNE:
+            try:
+                temp_name = ('[–] ' + submission.comments[i].author.name)  # and indexes them starting at 0
+            except:
+                temp_name = ('[–] ' + '[deleted]')
 
-        temp_score = submission.comments[i].score
+            temp_score = submission.comments[i].score
+            temp_time = human_time(datetime.datetime.fromtimestamp(submission.comments[i].created))
+        else:
+            temp_name = DNE
+            temp_score = DNE
+            temp_time = DNE
 
-        comment_list.append(RedditItem(temp_com, temp_name, temp_score))
+        print(submission.comments[i].gildings)
+        comment_list.append(RedditItem(temp_com, temp_name, temp_score, temp_time))
         str_comment_list.append(comment_list[i].string)
         del temp_com
         del temp_name
         del temp_score
+        del temp_time
 
 
 def fill_reply_items():
@@ -250,17 +235,20 @@ def fill_reply_items():
                 temp_name = ('[–] ' + submission.comments[i].replies[0].author.name)  # and indexes them starting at 0
             except:
                 temp_name = ('[–] ' + '[deleted]')
+            temp_score = submission.comments[i].replies[0].score
+            temp_time = human_time(datetime.datetime.fromtimestamp(submission.comments[i].replies[0].created))
+
         else:
             temp_name = DNE
-
-        try:
-            temp_score = submission.comments[i].replies[0].score
-        except:
             temp_score = DNE
-        reply_list.append(RedditItem(temp_com, temp_name, temp_score))
+            temp_time = DNE
+
+        reply_list.append(RedditItem(temp_com, temp_name, temp_score, temp_time))
+
         del temp_com
         del temp_name
         del temp_score
+        del temp_time
 
 
 def fill_rtr_items():
@@ -273,31 +261,30 @@ def fill_rtr_items():
         except:
             temp_com = DNE
 
-        # Creates the authors if they exist
+        # Creates the authors if they exist and indexes them starting at 0
         if temp_com != DNE:
             try:
-                temp_name = ('[–] ' + submission.comments[i].replies[0].replies[0].author.name)  # and indexes them starting at 0
+                temp_name = ('[–] ' + submission.comments[i].replies[0].replies[0].author.name)
             except:
                 temp_name = ('[–] ' + '[deleted]')
+            temp_score = submission.comments[i].replies[0].replies[0].score
+            temp_time = human_time(datetime.datetime.fromtimestamp(submission.comments[i].replies[0].replies[0].created))
         else:
             temp_name = DNE
-
-        try:
-            temp_score = submission.comments[i].replies[0].replies[0].score
-        except:
             temp_score = DNE
+            temp_time = DNE
 
-        rtr_list.append(RedditItem(temp_com, temp_name, temp_score))
+        rtr_list.append(RedditItem(temp_com, temp_name, temp_score, temp_time))
+
         del temp_com
         del temp_name
         del temp_score
+        del temp_time
 
 
 def create_img(comment):
-    index = str_comment_list.index(comment)                     # add text wrapping to string
-    formatted_comment = comment_list[index].split_self(cWidth)        # text values are separated into lines,
-    com_len = len(formatted_comment)                               # this gets the total number of lines
-    # print(comment_list[index].string)
+    index = str_comment_list.index(comment)
+    num = 0
 
     # Useful Variables
     line_height = 5
@@ -308,14 +295,14 @@ def create_img(comment):
 
     image_width = 1920
     indent = 40
-    arrow_indent = indent - 30  # Arrow indend refers to the vote arrow's indentation
+    arrow_indent = indent - 30  # Arrow indent refers to the vote arrow's indentation
     footer_parent = 'permalink  source  embed  save  save-RES  report  give award  reply  hide child comments'
     footer_child = 'permalink  source  embed  save  save-RES  parent  report  give award  reply  hide child comments'
-    author = comment_list[index].author
 
     # Fonts used in this function
     body_font = ImageFont.truetype('CustFont/Verdana.ttf', 20)
     author_font = ImageFont.truetype('CustFont/verdanab.ttf', 15)
+    time_font = ImageFont.truetype('CustFont/Verdana.ttf', 15)
 
     if bool_reply(comment):
         formatted_reply = reply_list[index].split_self(rWidth)
@@ -323,43 +310,10 @@ def create_img(comment):
         rep_height = large_space + line_spacing * rep_len + medium_space
         rep_score = reply_list[index].score
         rep_author = reply_list[index].author
-
-        def reply():
-            nonlocal line_spacing
-            nonlocal line_height
-            nonlocal indent
-
-            line_height += large_space
-            indent += 40
-            rep_w, rep_h = author_font.getsize(rep_author)
-            rep_auth_x, rep_auth_y = (indent, line_height)
-            rep_score_x, rep_score_y = (rep_w + indent, line_height)
-
-            draw.text((rep_auth_x, rep_auth_y), rep_author, font=author_font, fill=AUTHOR_HEX)
-            draw.text((rep_score_x, rep_score_y), f'  {str(rep_score)} points', font=author_font, fill=SCORE_HEX)
-
-            img.paste(COMMENT_VOTE_ICON, (indent - 30, line_height), COMMENT_VOTE_ICON)
-            draw.line((indent-40, img_height - 5, indent-40, rep_auth_y), fill="#B4B4B4", width=3)
-
-            for rep_string in formatted_reply:
-                line_height += line_spacing
-                rep_str_num = formatted_reply.index(rep_string)
-                draw.text((indent, line_height), rep_string, font=body_font, fill=BODY_HEX)
-                img_path = IMG_DIR + str(index) + '.' + str(1) + '.' + str(rep_str_num) + '.png'
-
-                if rep_string == formatted_reply[-1]:
-                    line_height += medium_space
-                    draw.text((indent, line_height), footer_child, font=author_font, fill=FOOTER_HEX)
-
-                temp = BACKGROUND.copy()
-                temp.paste(img, (0, 540 - int(.5 * img_h)), img)
-                temp.save(img_path)
+        rep_time = reply_list[index].time_ago
 
     else:
         rep_height = 0
-
-        def reply():
-            pass
 
     if bool_rtr(comment):
         formatted_rtr = rtr_list[index].split_self(rtrWidth)
@@ -367,40 +321,13 @@ def create_img(comment):
         rtr_height = large_space + line_spacing * rtr_len + medium_space
         rtr_score = rtr_list[index].score
         rtr_author = rtr_list[index].author
-
-        def rtr():
-            nonlocal line_spacing
-            nonlocal line_height
-            nonlocal indent
-
-            line_height += large_space
-            indent += 40
-            rtr_auth_w, rtr_auth_h = author_font.getsize(rtr_author)
-            rtr_auth_x, rtr_auth_y = (indent, line_height)
-            rtr_score_x, rtr_score_y = (rtr_auth_w + indent, line_height)
-
-            draw.text((rtr_auth_x, rtr_auth_y), rtr_author, font=author_font,  fill=AUTHOR_HEX)
-            draw.text((rtr_score_x, rtr_score_y), f'  {str(rtr_score)}  points', font=author_font, fill=SCORE_HEX)
-            img.paste(COMMENT_VOTE_ICON, (indent - 30, line_height), COMMENT_VOTE_ICON)
-            draw.line((indent-40, img_height - 5, indent-40, rtr_auth_y), fill="#B4B4B4", width=3)
-
-            for rtrString in formatted_rtr:
-                line_height += line_spacing
-                rtr_str_num = formatted_rtr.index(rtrString)
-                draw.text((indent, line_height), rtrString, font=body_font, fill=BODY_HEX)
-                if rtrString == formatted_rtr[-1]:
-                    line_height += medium_space
-                    draw.text((indent, line_height), footer_child, font=author_font, fill=FOOTER_HEX)
-                IMGPath = IMG_DIR + str(index) + '.' + str(2) + '.' + str(rtr_str_num) + '.png'
-                temp = BACKGROUND.copy()
-                temp.paste(img, (0, 540 - int(.5 * img_h)), img)
-                temp.save(IMGPath)
+        rtr_time = rtr_list[index].time_ago
 
     else:
         rtr_height = 0
 
-        def rtr():
-            pass
+    formatted_comment = comment_list[index].split_self(cWidth)        # text values are separated into lines,
+    com_len = len(formatted_comment)                                  # this gets the total number of lines
 
     # Potential comment height; this makes and educated guess at the comments size
     ptnl_com_height = line_height + line_spacing*com_len + medium_space
@@ -409,32 +336,68 @@ def create_img(comment):
     img = Image.new('RGBA', (image_width, img_height), '#222222')
     draw = ImageDraw.Draw(img)
 
+    author = comment_list[index].author
+    score = comment_list[index].score
+    com_time = comment_list[index].time_ago
+
     # Gets size of several objects for later use
     img_w, img_h = img.size
-    auth_w, auth_h = author_font.getsize(author)
-    auth_x, auth_y = (indent, line_height)
-    scr_x, scr_y = (auth_w + indent, line_height)
     
     # Draws the header for the comment
-    draw.text((auth_x, auth_y), author, font=author_font, fill=AUTHOR_HEX)
-    draw.text((scr_x, scr_y), f'  {str(comment_list[index].score)} points', font=author_font, fill=SCORE_HEX)
-    img.paste(COMMENT_VOTE_ICON, (arrow_indent, line_height), COMMENT_VOTE_ICON)
-    
-    for string in formatted_comment:
-        line_height += line_spacing
-        string_num = formatted_comment.index(string)
-        draw.text((indent, line_height), string, font=body_font, fill=BODY_HEX)
-        img_path = IMG_DIR + str(index) + '.' + str(0) + '.' + str(string_num) + '.png'
+    def comment_img(fmt_com, auth, scr, tim):
+        nonlocal line_spacing
+        nonlocal line_height
+        nonlocal indent
+        nonlocal num
 
-        temp = BACKGROUND.copy()
-        temp.paste(img, (0, 540 - int(.5 * img_h)), img)
-        temp.save(img_path)
+        formatted_time = f'{tim}'
+        formatted_points = f'  {str(scr)} points  '
 
-    line_height += medium_space
-    draw.text((indent, line_height), footer_parent, font=author_font, fill=FOOTER_HEX)
+        if num > 0:
+            line_height += large_space
+            indent += 40
 
-    reply()
-    rtr()
+            fttr = footer_child
+        else:
+            fttr = footer_parent
+
+        auth_w, auth_h = author_font.getsize(auth)
+        scr_w, scr_h = author_font.getsize(formatted_points)
+
+        auth_x, auth_y = (indent, line_height)
+        scr_x, scr_y = (auth_x + auth_w, line_height)
+        tm_x, tm_y = (scr_x + scr_w, line_height)
+
+        if num > 0:
+            draw.line((indent-40, img_height - 5, indent-40, auth_y), fill="#B4B4B4", width=3)
+
+        draw.text((auth_x, auth_y), auth, font=author_font, fill=AUTHOR_HEX)
+        draw.text((scr_x, scr_y), formatted_points, font=author_font, fill=SCORE_HEX)
+        draw.text((tm_x, tm_y), formatted_time, font=time_font, fill=FOOTER_HEX)
+
+        img.paste(COMMENT_VOTE_ICON, (indent - 30, line_height), COMMENT_VOTE_ICON)
+
+        for string in fmt_com:
+            line_height += line_spacing
+            string_num = fmt_com.index(string)
+            draw.text((indent, line_height), string, font=body_font, fill=BODY_HEX)
+            img_path = IMG_DIR + str(index) + '.' + str(num) + '.' + str(string_num) + '.png'
+
+            if string == fmt_com[-1]:
+                line_height += medium_space
+                draw.text((indent, line_height), fttr, font=author_font, fill=FOOTER_HEX)
+
+            temp = BACKGROUND.copy()
+            temp.paste(img, (0, 540 - int(.5 * img_h)), img)
+            temp.save(img_path)
+
+        num += 1
+
+    comment_img(formatted_comment, author, score, com_time)
+    if bool_reply(comment):
+        comment_img(formatted_reply, rep_author, rep_score, rep_time)
+    if bool_rtr(comment):
+        comment_img(formatted_rtr, rtr_author, rtr_score, rtr_time)
 
     photofilepath = IMG_DIR + str(index) + '.png'
     # img.show()
@@ -471,7 +434,7 @@ def create_wav(comment):
         os.chdir(BALCON_DIR)  # changes command line directory for the balcon utility
         txt_file = str(index) + '.%s.txt' % num
         wav_file = str(index) + '.%s.wav' % num
-        command = f'balcon -f "Subs\Sub1\Txt\{txt_file}" -w "Subs\Sub1\Wav\{wav_file}" -n "ScanSoft Daniel_Full_22kHz"'
+        command = f'balcon -f "Subs\\Sub1\\Txt\\{txt_file}" -w "Subs\\Sub1\\Wav\\{wav_file}" -n "ScanSoft Daniel_Full_22kHz"'
         os.system(command)
 
         # print(command)
@@ -486,77 +449,78 @@ def create_wav(comment):
         pass
 
 
-def createClip(comment):
+def create_clip(comment):
     index = str_comment_list.index(comment)
 
-    splitCom = comment_list[index].split_self(cWidth)
-    splitComLen = len(splitCom)
-    splitRep = reply_list[index].split_self(rWidth)
-    splitRepLen = len(splitRep)
-    splitRTR = rtr_list[index].split_self(rtrWidth)
-    splitRTRLen = len(splitRTR)
-    cClip = []
-    concat = []
-    iClip0 = []
-    iClip1 = []
-    iClip2 = []
-    Clip = 0
-    a0Path = WAV_DIR + str(index) + '.0.wav'
-    a1Path = WAV_DIR + str(index) + '.1.wav'
-    a2Path = WAV_DIR + str(index) + '.2.wav'
+    split_com = comment_list[index].split_self(cWidth)
+    split_rep = reply_list[index].split_self(rWidth)
+    split_rtr = rtr_list[index].split_self(rtrWidth)
 
-    sum0 = sum(len(zero) for zero in splitCom)
-    sum1 = sum(len(one) for one in splitRep)
-    sum2 = sum(len(two) for two in splitRTR)
+    # Arrays for various clips in sequence
+    c_clip = []     # Refers to comment clip ie. the whole this including replies/rtr
+    i_clip0 = []
+    i_clip1 = []
+    i_clip2 = []
 
-    aClip0 = AudioFileClip(a0Path)
-    for string in splitCom:
+    a0_path = WAV_DIR + str(index) + '.0.wav'
+    a1_path = WAV_DIR + str(index) + '.1.wav'
+    a2_path = WAV_DIR + str(index) + '.2.wav'
+
+    sum0 = sum(len(zero) for zero in split_com)
+    sum1 = sum(len(one) for one in split_rep)
+    sum2 = sum(len(two) for two in split_rtr)
+
+    a_clip0 = AudioFileClip(a0_path)
+    for string in split_com:
         factor = len(string)/sum0
-        path = IMG_DIR + str(index) + '.0' + '.%s.png' %splitCom.index(string)
-        Clip = ImageClip(path).set_duration(factor * aClip0.duration)
-        iClip0.append(Clip)
-        #print(path)
+        path = IMG_DIR + str(index) + '.0' + '.%s.png' % split_com.index(string)
+        clip = ImageClip(path).set_duration(factor * a_clip0.duration)
+        i_clip0.append(clip)
+        # print(path)
+
     s0 = '\ndone comment: ' + str(index)
-    iClip0 = concatenate_videoclips(iClip0)
-    iClip0 = iClip0.set_audio(aClip0)
-    cClip.append(iClip0)
+    i_clip0 = concatenate_videoclips(i_clip0)
+    i_clip0 = i_clip0.set_audio(a_clip0)
+    c_clip.append(i_clip0)
+
     if bool_reply(comment):
-        aClip1 = AudioFileClip(a1Path)
-        for rString in splitRep:
+        a_clip1 = AudioFileClip(a1_path)
+        for rString in split_rep:
             factor = len(rString)/sum1
-            path = IMG_DIR + str(index) + '.1' + '.%s.png' % splitRep.index(rString)
-            Clip = ImageClip(path).set_duration(factor * aClip1.duration)
-            iClip1.append(Clip)
-            #print(path)
+            path = IMG_DIR + str(index) + '.1' + '.%s.png' % split_rep.index(rString)
+            clip = ImageClip(path).set_duration(factor * a_clip1.duration)
+            i_clip1.append(clip)
+            # print(path)
 
         s1 = '\n\tdone reply: ' + str(index)
-        iClip1 = concatenate_videoclips(iClip1)
-        iClip1 = iClip1.set_audio(aClip1)
-        cClip.append(iClip1)
+        i_clip1 = concatenate_videoclips(i_clip1)
+        i_clip1 = i_clip1.set_audio(a_clip1)
+        c_clip.append(i_clip1)
     else:
         s1 = ''
         pass
+
     if bool_rtr(comment):
-        aClip2 = AudioFileClip(a2Path)
-        for rtrString in splitRTR:
+        a_clip2 = AudioFileClip(a2_path)
+        for rtrString in split_rtr:
             factor = len(rtrString)/sum2
-            path = IMG_DIR + str(index) + '.2' + '.%s.png' % splitRTR.index(rtrString)
-            Clip = ImageClip(path).set_duration(factor * aClip2.duration)
-            iClip2.append(Clip)
-            #print(path)
+            path = IMG_DIR + str(index) + '.2' + '.%s.png' % split_rtr.index(rtrString)
+            clip = ImageClip(path).set_duration(factor * a_clip2.duration)
+            i_clip2.append(clip)
+            # print(path)
         s2 = '\n\t\tdone rtr: ' + str(index)
-        iClip2 = concatenate_videoclips(iClip2)
-        iClip2 = iClip2.set_audio(aClip2)
-        cClip.append(iClip2)
+        i_clip2 = concatenate_videoclips(i_clip2)
+        i_clip2 = i_clip2.set_audio(a_clip2)
+        c_clip.append(i_clip2)
     else:
         s2 = ''
         pass
-    cClip.append(TRANSITION)
-    cClip = concatenate_videoclips(cClip)
+    c_clip.append(TRANSITION)
+    c_clip = concatenate_videoclips(c_clip)
     print(s0, end='')
     print(s1, end='')
     print(s2, end='')
-    return cClip
+    return c_clip
 
 
 def replace_me(string, to_replace, replace_with):
@@ -580,7 +544,7 @@ def create_sub():
 
     formatted_title = textwrap.wrap(RedditTitle.title, width=width)
     formatted_body = textwrap.wrap(RedditTitle.body, width=width + 8)
-    post_date_by = 'submitted ' + human_time(RedditTitle.sub_time) + ' by '
+    post_date_by = 'submitted ' + human_time(RedditTitle.created) + ' by '
     footer = str(RedditTitle.num_com) + ' comments  source  share  save  hide  give award  report  crosspost  ' \
                                         'hide all child comments'
     formatted_points = str(human_format(RedditTitle.score)).replace('.0', '')
@@ -616,7 +580,7 @@ def create_sub():
         sub_draw.text((indent_spacing, line_height), line, font=title_font, fill=TITLE_HEX)
         if line == formatted_title[-1]:
             the_sizex, the_sizey = title_font.getsize(formatted_title[-1])
-            sub_draw.text((indent_spacing + the_sizex + 5, line_height + 5), '(self.' + str(RedditTitle.subreddit) + ')',
+            sub_draw.text((indent_spacing + the_sizex + 5, line_height + 5), f'(self.{str(RedditTitle.subreddit)})',
                           font=sub_font, fill='#888888')
         line_height = line_height + line_spacing
     del line
@@ -672,6 +636,7 @@ def create_sub():
 
 
 def cleanup():
+    global del_vid
     shutil.rmtree(IMG_DIR)
     print('Removed IMG')
     time.sleep(.05)
@@ -706,10 +671,13 @@ def cleanup():
         os.mkdir(VID_DIR)
         print("Created VID")
 
+    del_vid = False
+
 
 def create_thumbnail():
     def color_options():
-        bgrd_choice = 2  # int(input('\nType your background color option [0 = Transparent, 1 = Default, 2 = Black]\n'))
+        global bgrd_choice
+
         if bgrd_choice == 0:
             color = 0
         elif bgrd_choice == 1:
@@ -725,7 +693,7 @@ def create_thumbnail():
     # dif = datetime.datetime.utcnow() - date
     # print(dif)
 
-    sub_time = RedditTitle.sub_time
+    sub_time = RedditTitle.created
     subreddit = 'r/' + str(RedditTitle.subreddit)
     author = 'u/' + str(RedditTitle.author)
     score = int(RedditTitle.score)
@@ -759,7 +727,7 @@ def create_thumbnail():
     thumb_draw.text((90, 910), str(human_format(score)), font=score_font, fill='#FF8C60')
     thumb_draw.text((500, 900), str(human_format(num_com)) + '  Comments', font=score_font, fill='#818384')
 
-    lineHeight = base_height
+    line_height_thumb = base_height
     # print(str(len(formatted_title) * (size + line_spacing)))
     count_1 = 0
     count_2 = 0
@@ -788,8 +756,8 @@ def create_thumbnail():
     # print(count_1, count_2)
     for line in formatted_title:
         body_font = ImageFont.truetype('CustFont/NimbusSanL-Bol.ttf', size)
-        thumb_draw.text((indent_spacing, lineHeight), line, font=body_font)
-        lineHeight = lineHeight + line_spacing
+        thumb_draw.text((indent_spacing, line_height_thumb), line, font=body_font)
+        line_height_thumb = line_height_thumb + line_spacing
 
     # thumbnail.show()
     thumbnail.save(VID_DIR + 'thumb.png')
@@ -832,7 +800,7 @@ def dynamic_music():
             '\n'
         song_info.append(info)
 
-        if dur_counter > estimatedTime * 1.1:
+        if dur_counter > estimated_time * 1.1:
             break
     song_sound = concatenate_audioclips(song_sound)
     song_sound = song_sound.volumex(.1)
@@ -845,7 +813,7 @@ reg.fit(df[['char_len', 'num_com', 'threshold']], df.duration)
 
 
 def estimate_time():
-    global estimatedTime
+    global estimated_time
     global charSum
     charSum = len(str(RedditTitle.title))
     for x in str_comment_list[:number_comments]:
@@ -860,9 +828,8 @@ def estimate_time():
         else:
             pass
 
-    estimatedTime = reg.predict([[charSum, number_comments, threshold]])[0]
-    estimatedTime = round(estimatedTime, 5)
-    print(f'Estimated Video Length is: {minute_format(estimatedTime)} or {str(estimatedTime)}s')
+    estimated_time = reg.predict([[charSum, number_comments, threshold]])[0]
+    estimated_time = round(estimated_time, 5)
 
 
 def video_creation(thing):
@@ -880,29 +847,30 @@ def video_creation(thing):
     while not os.path.isfile(sp0):
         print(sp0)
         time.sleep(.3)
-        print("waitng for comment:" + str(index))
+        print("waiting for comment:" + str(index))
     if bool_reply(thing):
         while not os.path.isfile(sp1):
             time.sleep(.3)
-            print("waitng for reply:" + str(index))
+            print("waiting for reply:" + str(index))
     else:
         pass
     if bool_rtr(thing):
         while not os.path.isfile(sp2):
             time.sleep(.3)
-            print("waitng for comment:" + str(index))
+            print("waiting for comment:" + str(index))
     else:
         pass
     # time.sleep(3)
-    final.append(createClip(thing))
+    final.append(create_clip(thing))
 
 
 def metadata():
-    str_tag = 'reddit, best of ask reddit, reddit, ask reddit top posts, r/story, r/ askreddit, r/askreddit, ' \
-              'story time, reddify, r slash, toad films, updoot, flumpy, foxfilms, jayben, reddit & chill, bamboozled, ' \
-              'brainydude, reddit watchers, best posts & comments, reddit sexual, reddit 2019, reddit nsfw, ' \
-              'askreddit nsfw, Reddit Genie'
-    data ={
+    str_tag = (
+        'reddit, best of ask reddit, reddit, ask reddit top posts, r/story, r/ askreddit, r/askreddit, story time, '
+        'reddify, r slash, toad films, updoot, flumpy, foxfilms, jayben, reddit & chill, bamboozled, brainydude, '
+        'reddit watchers, best posts & comments, reddit sexual, reddit 2019, reddit nsfw, askreddit nsfw, Reddit Genie'
+    )
+    data = {
         'title': RedditTitle.title + ' (r/AskReddit)',
         'description': 'r/AskReddit Videos! Welcome back to a brand new Reddit Genie video!'
                        '\n\n🔔 Hit the bell next to Subscribe so you never miss a video!'
@@ -917,12 +885,10 @@ def metadata():
                        'Please like comment and subscribe. Comment your opinion down below! '
                        '\n'
                        '\n🎧♪♫ [Track List] ♫♪🎧 '
-                       '\n' + \
-                       sound_desc + \
-                       '\n'
+                       f'\n{sound_desc}\n'
                        '\nOutro Template made by Grabster - Youtube.com/GrabsterTV'
                        '\n'
-                       '\nSubreddits used: r/AskReddit'
+                       f'\nSubreddits used: r/{str(RedditTitle.subreddit)}'
                        '\n'
                        '\n#relationships #reddit #askreddit #askredditscary #askredditnsfw #redditfunny #updoot '
                        '\n'
@@ -935,17 +901,21 @@ def metadata():
         # 'publicStatsViewable': 'true',
         # 'publishAt': '2017-06-01T12:05:00+02:00',
         # 'categoryId': '10',
-        # 'recordingdate': '2017-05-21',
+        # 'recordingdate': str(datetime.date),
         # 'location': {
         #     'latitude': 48.8584,
         #     'longitude': 2.2945
     }
-    print(data['description'])
+    # print(data['description'])
     with open(UPLOAD_DIR + 'data.json', 'w') as f:
         json.dump(data, f)
+    with open(VID_DIR + 'description.txt', 'w', encoding='utf-8') as desc:
+        desc.write(data['description'])
 
 
 def upload_video():
+    shutil.copy2(video_path, UPLOAD_DIR)
+    shutil.copy2(VID_DIR + 'thumb.png', UPLOAD_DIR)
     command = []
     os.chdir(UPLOAD_DIR)
     command.append('youtubeuploader_windows_amd64 ')
@@ -957,14 +927,50 @@ def upload_video():
     print(command)
 
 
-aud_rep, aud_rep_with = ['’', '‘', '”', '“', '*', ';', '^', '\\', '/', '_', 'coworker', 'Coworker', 'tbh', 'omg'], \
-                        ["'", "'", '"', '"', '', '', '', '', '', ' ', 'co-worker', 'co-worker', 'to be honest', 'oh my god']
+reddit = praw.Reddit(client_id='BHUtkEY0x4vomA', client_secret='MZvTVUs83p8wEN_Z8EU8bIUjGTY',
+                     user_agent='pulling posts')
+speed = int(input('Type your preferred speed 0 = fastmode, 1 = regular\n'))
+reddit_link = input('Paste your desired reddit post:\n')
+submission = reddit.submission(url=reddit_link)
+desired_vid_len = int(input('Enter your maximum desired video length (seconds):\n'))
+bgrd_choice = 2  # int(input('\nType your background color option [0 = Transparent, 1 = Default, 2 = Black]\n'))
+
+
+class RedditTitle:
+    title = submission.title
+    body = submission.selftext
+    author = submission.author
+    subreddit = submission.subreddit
+    score = submission.score
+    created = datetime.datetime.fromtimestamp(submission.created)
+    num_com = submission.num_comments
+    try:
+        author = submission.author.name
+    except:
+        author = '[–] ' + '[deleted]'
+
+    def split_self(self, width):
+        split = textwrap.wrap(self.title, width=width)
+        return split
+
+
+# Initialize useful lists
+clip_array = []
+item_list = []
+comment_list = []
+str_comment_list = []
+reply_list = []
+rtr_list = []
+# Replacement lists
+aud_rep, aud_rep_with = ['’', '‘', '”', '“', '*', ';', '^', '\\', '/', '_', 'coworker', 'Coworker', 'tbh'], \
+                        ["'", "'", '"', '"', '', '', '', '', '', ' ', 'co-worker', 'co-worker', 'to be honest']
 viz_rep, viz_rep_with = [], []
 all_rep, all_rep_with = ['&#x200B'], ['']
 
 lol, haha = ['LOL ', 'lol ', 'Lol ', 'LOL.', 'lol.', 'Lol.'], ['haha ', 'haha ', 'haha ', 'haha.', 'haha.', 'haha.']
 emote1, emote2 = [':)', '(:', ':(', '):'], ['smiley', 'smiley', 'sad face', 'sad face']
 
+# Appends replacement lists in a way that saves space
 aud_rep.extend(lol)
 aud_rep_with.extend(haha)
 aud_rep.extend(emote1)
@@ -972,76 +978,98 @@ aud_rep_with.extend(emote2)
 
 del_vid = True
 cleanup()
-del_vid = False
 
+# Creates all information for the program
 create_thumbnail()
 fill_comment_items()
 fill_reply_items()
 fill_rtr_items()
 
+# This block is used for getting the video length within a certain range
 estimate_time()
+print(f'\nMaximum Video Length is: {minute_format(estimated_time)} or {str(estimated_time)}s')
 
-tyt = 500
-if tyt > estimatedTime:
-    tyt = estimatedTime
-    print(f'Input exceeds maximum time of {estimatedTime}s for this comment')
+if desired_vid_len > estimated_time:
+    desired_vid_len = estimated_time
+    print(f'\nInput exceeds maximum time of {estimated_time}s for this reddit post, setting time to {estimated_time}')
 
-while estimatedTime > tyt:
+while estimated_time > desired_vid_len:
     number_comments -= 1
     estimate_time()
-    if estimatedTime <= tyt: break
+    if estimated_time <= desired_vid_len:
+        break
+
     for y in range(5):
         threshold += .08
         estimate_time()
-        if estimatedTime <= tyt: break
+        if estimated_time <= desired_vid_len:
+            break
+
     estimate_time()
-    if estimatedTime <= tyt: break
-    threshold = .1
-print(number_comments)
-print(threshold)
+    if estimated_time <= desired_vid_len:
+        break
+    threshold = .3
+
+print(f'\nEstimated Video Length is: {minute_format(estimated_time)} or {str(estimated_time)}s')
+print(f'Number of Comments: {number_comments}')
+print(f'Threshold: {threshold}')
 
 dynamic_music()
 
 final = [create_sub()]
 
-thread = []
-for com in str_comment_list[:number_comments]:
-    ind = str_comment_list.index(com)
-    temp = threading.Thread(target=video_creation, args=(com,))
-    thread.append(temp)
-    thread[ind].start()
-del ind
-for com in str_comment_list[:number_comments]:
-    ind = str_comment_list.index(com)
-    thread[ind].join()
-del ind
+# Used for multithreading purposes if the option is selected
+thread = []  # 'thread' is used to keep track of all running threads so that they can be joined
+if speed == 0:
+    for com in str_comment_list[:number_comments]:
+        ind = str_comment_list.index(com)
+        temp_thread = threading.Thread(target=video_creation, args=(com,))
+        thread.append(temp_thread)
+        thread[ind].start()
+    del ind
+    for com in str_comment_list[:number_comments]:
+        ind = str_comment_list.index(com)
+        thread[ind].join()
+    del ind
+else:
+    for com in str_comment_list[:number_comments]:
+        video_creation(com)
 
+# This combines all the clips created in the multithreaded workload to one video and sets the audio to the dynamic audio
 final.append(OUTRO)
 final = concatenate_videoclips(final)
-backgroundMusic = song_sound.set_duration(final.duration)
-final_audio = CompositeAudioClip([final.audio, backgroundMusic])
+background_music = song_sound.set_duration(final.duration)
+final_audio = CompositeAudioClip([final.audio, background_music])
 final = final.set_audio(final_audio)
-strong = round(100 - (abs(estimatedTime/final.duration) * 100), 2)
-if strong > 0:
-    strong = '+' + str(strong)
+
+# Used to compare the estimated video lengh the the actual length
+pct_diff = round(100 - (abs(estimated_time/final.duration) * 100), 2)
+if pct_diff > 0:
+    pct_diff = '+' + str(pct_diff)
 else:
-    strong = str(strong)
-weakSauce = final.duration - estimatedTime
-weak = minute_format(weakSauce)
-if float(weakSauce) > 0:
-    weak = '+' + weak
+    pct_diff = str(pct_diff)
+abs_diff = final.duration - estimated_time
+formatted_diff = minute_format(abs_diff)
+if float(abs_diff) > 0:
+    formatted_diff = '+' + formatted_diff
 else:
     pass
 
 print(f'\n \nActual Video Length is: {minute_format(final.duration)} / {str(final.duration)}s. '
-      f'Shifted {weak} / {str(strong)}% from {minute_format(estimatedTime)} / {str(final.duration)}s')
+      f'Shifted {formatted_diff} / {str(pct_diff)}% from {minute_format(estimated_time)} / {str(estimated_time)}s\n')
+
+vid_name = str(submission.id)
+vid_extension = '.mp4'
+video_path = VID_DIR + vid_name + vid_extension
+final.write_videofile(video_path, fps=VID_FPS, threads=16, preset='ultrafast')
+
 metadata()
-final.write_videofile(fullVideoPath, fps=VidFPS, threads=16, preset='ultrafast')
-
-shutil.copy2(fullVideoPath, UPLOAD_DIR)
-shutil.copy2(VID_DIR + 'thumb.png', UPLOAD_DIR)
-
 # upload_video()
+
+# Collects data to help the program run better
 # data_collection()
+print('\n')
 cleanup()
 
+print('\nClosing in 10 seconds')
+time.sleep(10)
