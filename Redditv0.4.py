@@ -18,6 +18,18 @@ from mp3_tagger import MP3File, VERSION_1, VERSION_2, VERSION_BOTH
 import itertools
 
 
+'''
+        time.sleep(1)
+
+        with open(f'Subs/Sub1/Txt/{txt_file}', 'r') as content_file:
+            content = content_file.read()
+        dur = AudioFileClip(f'Subs/Sub1/Wav/{wav_file}').duration
+        with open('char_data.csv', 'a') as dt:
+            app = csv.writer(dt)
+            app.writerow([content, dur])
+'''
+
+
 class RedditItem(object):
     def __init__(self, string, author, score, time_ago):
         self.string = string
@@ -89,6 +101,7 @@ BIG_SCORE_HEX = '#646464'
 # Imported with moviepy
 TRANSITION = VideoFileClip('Static/NewError.mp4').set_duration(.7).set_fps(VID_FPS)
 OUTRO = VideoFileClip('Static/outro.mp4').set_fps(VID_FPS)
+LASAGNA = AudioFileClip('Static/lasagna.wav').set_duration(.33)
 
 
 def cc(s):
@@ -177,14 +190,11 @@ def bool_reply(comment):
 
 def bool_rtr(comment):
     index = str_comment_list.index(comment)
-    if bool_reply(comment) and (rtr_list[index].string != DNE) and (rtr_list[index].score >= reply_list[index].score * threshold):
+    if bool_reply(comment) and (rtr_list[index].string != DNE) and (
+            rtr_list[index].score >= reply_list[index].score * threshold):
         return True
     else:
         return False
-
-
-def fill_all(class_object):
-    
 
 
 def fill_comment_items():
@@ -268,7 +278,8 @@ def fill_rtr_items():
             except:
                 temp_name = ('[–] ' + '[deleted]')
             temp_score = submission.comments[i].replies[0].replies[0].score
-            temp_time = human_time(datetime.datetime.fromtimestamp(submission.comments[i].replies[0].replies[0].created))
+            temp_time = human_time(
+                datetime.datetime.fromtimestamp(submission.comments[i].replies[0].replies[0].created))
         else:
             temp_name = DNE
             temp_score = DNE
@@ -285,17 +296,17 @@ def fill_rtr_items():
 def create_img(comment):
     index = str_comment_list.index(comment)
     num = 0
+    box_mode = True
 
     # Useful Variables
     line_height = 5
     # Line height and indent are shifted dynamically in the program for simplicity
     line_spacing = 25
-    medium_space = 30   # Primarily used to separate footer
-    large_space = 40    # Primarily used to separate comments
+    medium_space = 30  # Primarily used to separate footer
+    large_space = 40  # Primarily used to separate comments
 
     image_width = 1920
-    indent = 40
-    arrow_indent = indent - 30  # Arrow indent refers to the vote arrow's indentation
+    indent = 0
     footer_parent = 'permalink  source  embed  save  save-RES  report  give award  reply  hide child comments'
     footer_child = 'permalink  source  embed  save  save-RES  parent  report  give award  reply  hide child comments'
 
@@ -326,11 +337,11 @@ def create_img(comment):
     else:
         rtr_height = 0
 
-    formatted_comment = comment_list[index].split_self(cWidth)        # text values are separated into lines,
-    com_len = len(formatted_comment)                                  # this gets the total number of lines
+    formatted_comment = comment_list[index].split_self(cWidth)  # text values are separated into lines,
+    com_len = len(formatted_comment)  # this gets the total number of lines
 
     # Potential comment height; this makes and educated guess at the comments size
-    ptnl_com_height = line_height + line_spacing*com_len + medium_space
+    ptnl_com_height = line_height + line_spacing * com_len + medium_space
     img_height = ptnl_com_height + rep_height + rtr_height + medium_space
 
     img = Image.new('RGBA', (image_width, img_height), '#222222')
@@ -342,7 +353,7 @@ def create_img(comment):
 
     # Gets size of several objects for later use
     img_w, img_h = img.size
-    
+
     # Draws the header for the comment
     def comment_img(fmt_com, auth, scr, tim):
         nonlocal line_spacing
@@ -351,15 +362,24 @@ def create_img(comment):
         nonlocal num
 
         formatted_time = f'{tim}'
-        formatted_points = f'  {str(scr)} points  '
+        formatted_points = f'  {str(human_format(scr, 10000))} points  '
+        prev_indent = indent
+        indent += 40
 
         if num > 0:
             line_height += large_space
-            indent += 40
 
             fttr = footer_child
         else:
             fttr = footer_parent
+
+        if num == 1:
+            box_hex = '#121212'
+        else:
+            box_hex = '#161616'
+        box_outline_hex = '#333333'
+
+        arrow_indent = indent - 30  # Arrow indent refers to the vote arrow's indentation
 
         auth_w, auth_h = author_font.getsize(auth)
         scr_w, scr_h = author_font.getsize(formatted_points)
@@ -368,14 +388,18 @@ def create_img(comment):
         scr_x, scr_y = (auth_x + auth_w, line_height)
         tm_x, tm_y = (scr_x + scr_w, line_height)
 
-        if num > 0:
-            draw.line((indent-40, img_height - 5, indent-40, auth_y), fill="#B4B4B4", width=3)
+        if box_mode:
+            draw.rectangle([(prev_indent, line_height - .5*line_spacing), (1920 - 10*num, 15 + line_height + img_height - num*2)],
+                           fill=box_hex, outline=box_outline_hex)
+        else:
+            if num > 0:
+                draw.line((indent - 40, img_height - 5, indent - 40, auth_y), fill="#B4B4B4", width=3)
 
         draw.text((auth_x, auth_y), auth, font=author_font, fill=AUTHOR_HEX)
         draw.text((scr_x, scr_y), formatted_points, font=author_font, fill=SCORE_HEX)
         draw.text((tm_x, tm_y), formatted_time, font=time_font, fill=FOOTER_HEX)
 
-        img.paste(COMMENT_VOTE_ICON, (indent - 30, line_height), COMMENT_VOTE_ICON)
+        img.paste(COMMENT_VOTE_ICON, (arrow_indent, line_height), COMMENT_VOTE_ICON)
 
         for string in fmt_com:
             line_height += line_spacing
@@ -436,8 +460,8 @@ def create_wav(comment):
         wav_file = str(index) + '.%s.wav' % num
         command = f'balcon -f "Subs\\Sub1\\Txt\\{txt_file}" -w "Subs\\Sub1\\Wav\\{wav_file}" -n "ScanSoft Daniel_Full_22kHz"'
         os.system(command)
-
         # print(command)
+
     balcon(0)
     if bool_reply(comment):
         balcon(1)
@@ -457,7 +481,7 @@ def create_clip(comment):
     split_rtr = rtr_list[index].split_self(rtrWidth)
 
     # Arrays for various clips in sequence
-    c_clip = []     # Refers to comment clip ie. the whole this including replies/rtr
+    c_clip = []  # Refers to comment clip ie. the whole this including replies/rtr
     i_clip0 = []
     i_clip1 = []
     i_clip2 = []
@@ -471,8 +495,9 @@ def create_clip(comment):
     sum2 = sum(len(two) for two in split_rtr)
 
     a_clip0 = AudioFileClip(a0_path)
+    a_clip0 = concatenate_audioclips([a_clip0, LASAGNA])
     for string in split_com:
-        factor = len(string)/sum0
+        factor = len(string) / sum0
         path = IMG_DIR + str(index) + '.0' + '.%s.png' % split_com.index(string)
         clip = ImageClip(path).set_duration(factor * a_clip0.duration)
         i_clip0.append(clip)
@@ -485,8 +510,9 @@ def create_clip(comment):
 
     if bool_reply(comment):
         a_clip1 = AudioFileClip(a1_path)
+        a_clip1 = concatenate_audioclips([a_clip1, LASAGNA])
         for rString in split_rep:
-            factor = len(rString)/sum1
+            factor = len(rString) / sum1
             path = IMG_DIR + str(index) + '.1' + '.%s.png' % split_rep.index(rString)
             clip = ImageClip(path).set_duration(factor * a_clip1.duration)
             i_clip1.append(clip)
@@ -502,8 +528,9 @@ def create_clip(comment):
 
     if bool_rtr(comment):
         a_clip2 = AudioFileClip(a2_path)
+        a_clip2 = concatenate_audioclips([a_clip2, LASAGNA])
         for rtrString in split_rtr:
-            factor = len(rtrString)/sum2
+            factor = len(rtrString) / sum2
             path = IMG_DIR + str(index) + '.2' + '.%s.png' % split_rtr.index(rtrString)
             clip = ImageClip(path).set_duration(factor * a_clip2.duration)
             i_clip2.append(clip)
@@ -566,7 +593,8 @@ def create_sub():
     # Draws rectangle at current height
     sub_draw.rectangle(
         [(indent_spacing, line_height), (1920 - 10,
-         15 + line_height + len(formatted_title) * line_spacing + 2 * small_space + large_space
+                                         15 + line_height + len(
+                                             formatted_title) * line_spacing + 2 * small_space + large_space
                                          + len(formatted_body) * line_spacing + 2 * medium_space)], fill='#373737')
 
     # Draws the score and icon
@@ -597,16 +625,40 @@ def create_sub():
     if RedditTitle.body != '':
         # Draws a rectangle at line spacing + large space
         # large_space - small_space is used to negate the previous addition to line height
+        len_body = len(formatted_body)
         line_height += large_space
         sub_draw.rectangle([indent_spacing, line_height - medium_space, 1920 - 100, small_space + line_height +
-                            len(formatted_body) * line_spacing], fill=None, outline='#cccccc', width=1)
+                            len_body * line_spacing], fill=None, outline='#cccccc', width=1)
 
         # Creates Text Body
         for line in formatted_body:
+            index = formatted_body.index(line)
             sub_draw.text((indent_spacing + 10, line_height), line, font=body_font, fill='#dddddd')
             line_height = line_height + line_spacing
+            temp.save(IMG_DIR + f'body.{index}.png')
         del line
         more_spacing = 0
+
+        filename = TXT_DIR + 'body.txt'
+        body_txt_file = open(filename, 'w',
+                              encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
+        body_txt_file.write(replace_me(RedditTitle.body, aud_rep, aud_rep_with))
+        body_txt_file.close()
+
+        os.chdir(BALCON_DIR)  # changes command line directory for the balcon utility
+        txt_file = 'body.txt'
+        wav_file = 'body.wav'
+        balcom = f'balcon -f "Subs\\Sub1\\Txt\\{txt_file}" -w "Subs\\Sub1\\Wav\\{wav_file}" -n "ScanSoft Daniel_Full_22kHz"'
+        os.system(balcom)
+        while not os.path.isfile(WAV_DIR + 'body.wav'):
+            time.sleep(.12)
+
+        body_aclip = AudioFileClip(WAV_DIR + 'body.wav')
+
+        for i in range(len_body):
+            body_iclip = ImageClip(IMG_DIR + f'body.{i}.png').set_duration(body_aclip.duration)
+            body_vclip = body_iclip.set_audio(body_aclip)
+            body_vclip = concatenate_videoclips([body_vclip, TRANSITION])
 
     # Places Space Then Draws Footer
     line_height += medium_space + more_spacing
@@ -797,7 +849,7 @@ def dynamic_music():
         info = '\nSong: ' + title + \
                '\nArtist:  ' + artist + \
                '\nTimestap: ' + minute_format(dur_counter - song_sound[index].duration, 0) + \
-            '\n'
+               '\n'
         song_info.append(info)
 
         if dur_counter > estimated_time * 1.1:
@@ -861,7 +913,7 @@ def video_creation(thing):
     else:
         pass
     # time.sleep(3)
-    final.append(create_clip(thing))
+    main_clips.append(create_clip(thing))
 
 
 def metadata():
@@ -955,8 +1007,7 @@ class RedditTitle:
 
 
 # Initialize useful lists
-clip_array = []
-item_list = []
+main_clips = []
 comment_list = []
 str_comment_list = []
 reply_list = []
@@ -1036,6 +1087,8 @@ else:
         video_creation(com)
 
 # This combines all the clips created in the multithreaded workload to one video and sets the audio to the dynamic audio
+shuffle(main_clips)
+final.extend(main_clips)
 final.append(OUTRO)
 final = concatenate_videoclips(final)
 background_music = song_sound.set_duration(final.duration)
@@ -1043,7 +1096,7 @@ final_audio = CompositeAudioClip([final.audio, background_music])
 final = final.set_audio(final_audio)
 
 # Used to compare the estimated video lengh the the actual length
-pct_diff = round(100 - (abs(estimated_time/final.duration) * 100), 2)
+pct_diff = round(100 - (abs(estimated_time / final.duration) * 100), 2)
 if pct_diff > 0:
     pct_diff = '+' + str(pct_diff)
 else:
