@@ -29,13 +29,80 @@ import itertools
             app.writerow([content, dur])
 '''
 
+speed = int(input('Type your preferred speed 0 = fastmode, 1 = regular\n'))
+reddit_link = input('Paste your desired reddit post:\n')
+desired_vid_len = int(input('Enter your maximum desired video length (seconds):\n'))
+bgrd_choice = int(input('Type your background color option [0 = Transparent, 1 = Default, 2 = Black]\n'))
+
 
 class RedditItem(object):
-    def __init__(self, string, author, score, time_ago):
+    # Imported with Pillow - Gildings
+    gild_w, gild_h = (20, 20)
+    PLATINUM = Image.open('Static/platinum.png')
+    PLATINUM = PLATINUM.resize((gild_w, gild_h), Image.ANTIALIAS)
+    GOLD = Image.open('Static/gold.png')
+    GOLD = GOLD.resize((gild_w, gild_h), Image.ANTIALIAS)
+    SILVER = Image.open('Static/silver.png')
+    SILVER = SILVER.resize((gild_w, gild_h), Image.ANTIALIAS)
+    icon_img_font = ImageFont.truetype('CustFont/verdanab.ttf', 17)
+
+    def __init__(self, string, author, score, time_ago, gildings):
         self.string = string
         self.author = author
         self.score = score
         self.time_ago = time_ago
+        self.gildings = gildings
+
+        if 'gid_1' in self.gildings:
+            num_silver = self.gildings['gid_1']
+        else:
+            num_silver = 0
+        if 'gid_2' in self.gildings:
+            num_gold = self.gildings['gid_2']
+        else:
+            num_gold = 0
+        if 'gid_3' in self.gildings:
+            num_platinum = self.gildings['gid_3']
+        else:
+            num_platinum = 0
+
+        icon_img = Image.new('RGBA', (200, self.gild_h), (0, 0, 0, 0))  # self.gild_h
+        icon_img_draw = ImageDraw.Draw(icon_img)
+        icon_img_height = self.gild_h
+        text_height = -3
+        small_spacing = 3
+        spacing = 9
+        current_width = 0
+
+        more_space = 0
+        if num_silver >= 1:
+            icon_img.paste(self.SILVER, (current_width, 0), self.SILVER)
+            current_width += self.gild_w
+            more_space = spacing
+        if num_silver >= 2:
+            current_width += small_spacing
+            icon_img_draw.text((current_width, text_height), str(num_silver), font=self.icon_img_font, fill='#6a98af')
+            current_width += spacing
+        current_width += more_space
+        more_space = 0
+        if num_gold >= 1:
+            icon_img.paste(self.GOLD, (current_width, 0), self.GOLD)
+            current_width += self.gild_w
+            more_space = spacing
+        if num_gold >= 2:
+            current_width += small_spacing
+            icon_img_draw.text((current_width, text_height), str(num_gold), font=self.icon_img_font, fill='#6a98af')
+            current_width += spacing
+        current_width += more_space
+        if num_platinum >= 1:
+            icon_img.paste(self.PLATINUM, (current_width, 0), self.PLATINUM)
+            current_width += self.gild_w
+        if num_platinum >= 2:
+            current_width += small_spacing
+            icon_img_draw.text((current_width, text_height), str(num_platinum), font=self.icon_img_font, fill='#6a98af')
+            current_width += spacing
+
+        self.icon = icon_img
 
     def split_self(self, width):
         split = textwrap.wrap(self.string, width=width)
@@ -80,14 +147,6 @@ UPDOWNVOTE = Image.open('Thumbnail/upvotedownvote.png').convert('RGBA')
 UPDOWNVOTE = UPDOWNVOTE.resize((440, 400), Image.ANTIALIAS)
 COMMENT_ICON = Image.open('Thumbnail/commenticon.png')
 COMMENT_ICON = COMMENT_ICON.resize((180, 160), Image.ANTIALIAS)
-# Imported with Pillow - Gildings
-gild_w, gild_h = (15, 15)
-PLATINUM = Image.open('Static/platinum.png')
-PLATINUM = PLATINUM.resize((gild_w, gild_h), Image.ANTIALIAS)
-GOLD = Image.open('Static/gold.png')
-GOLD = GOLD.resize((gild_w, gild_h), Image.ANTIALIAS)
-SILVER = Image.open('Static/silver.png')
-SILVER = SILVER.resize((gild_w, gild_h), Image.ANTIALIAS)
 
 # Lists all the hex code for fill
 AUTHOR_HEX = '#6a98af'
@@ -197,7 +256,7 @@ def bool_rtr(comment):
         return False
 
 
-def fill_comment_items():
+def fill_all():
     for i in range(number_comments):  # gets all all comments saves them to a string
         # Creates the comments if they exist
         try:
@@ -207,6 +266,8 @@ def fill_comment_items():
             temp_com = DNE
 
         # Creates the authors if they exist
+        if submission.comments[i].stickied:
+            temp_com = DNE
         if temp_com != DNE:
             try:
                 temp_name = ('[–] ' + submission.comments[i].author.name)  # and indexes them starting at 0
@@ -215,21 +276,22 @@ def fill_comment_items():
 
             temp_score = submission.comments[i].score
             temp_time = human_time(datetime.datetime.fromtimestamp(submission.comments[i].created))
+            temp_gildings = submission.comments[i].gildings
         else:
             temp_name = DNE
             temp_score = DNE
             temp_time = DNE
+            temp_gildings = DNE
 
-        print(submission.comments[i].gildings)
-        comment_list.append(RedditItem(temp_com, temp_name, temp_score, temp_time))
+        comment_list.append(RedditItem(temp_com, temp_name, temp_score, temp_time, temp_gildings))
         str_comment_list.append(comment_list[i].string)
+        # print(temp_gildings)
         del temp_com
         del temp_name
         del temp_score
         del temp_time
+        del temp_gildings
 
-
-def fill_reply_items():
     for i in range(number_comments):  # gets all all comments saves them to a string
 
         # Creates the comments if they exist
@@ -247,21 +309,22 @@ def fill_reply_items():
                 temp_name = ('[–] ' + '[deleted]')
             temp_score = submission.comments[i].replies[0].score
             temp_time = human_time(datetime.datetime.fromtimestamp(submission.comments[i].replies[0].created))
+            temp_gildings = submission.comments[i].replies[0].gildings
 
         else:
             temp_name = DNE
             temp_score = DNE
             temp_time = DNE
+            temp_gildings = DNE
 
-        reply_list.append(RedditItem(temp_com, temp_name, temp_score, temp_time))
+        reply_list.append(RedditItem(temp_com, temp_name, temp_score, temp_time, temp_gildings))
 
         del temp_com
         del temp_name
         del temp_score
         del temp_time
+        del temp_gildings
 
-
-def fill_rtr_items():
     for i in range(number_comments):  # gets all all comments saves them to a string
 
         # Creates the comments if they exist
@@ -280,17 +343,20 @@ def fill_rtr_items():
             temp_score = submission.comments[i].replies[0].replies[0].score
             temp_time = human_time(
                 datetime.datetime.fromtimestamp(submission.comments[i].replies[0].replies[0].created))
+            temp_gildings = submission.comments[i].replies[0].replies[0].gildings
         else:
             temp_name = DNE
             temp_score = DNE
             temp_time = DNE
+            temp_gildings = DNE
 
-        rtr_list.append(RedditItem(temp_com, temp_name, temp_score, temp_time))
+        rtr_list.append(RedditItem(temp_com, temp_name, temp_score, temp_time, temp_gildings))
 
         del temp_com
         del temp_name
         del temp_score
         del temp_time
+        del temp_gildings
 
 
 def create_img(comment):
@@ -322,6 +388,7 @@ def create_img(comment):
         rep_score = reply_list[index].score
         rep_author = reply_list[index].author
         rep_time = reply_list[index].time_ago
+        rep_gld_icon = reply_list[index].icon
 
     else:
         rep_height = 0
@@ -333,6 +400,7 @@ def create_img(comment):
         rtr_score = rtr_list[index].score
         rtr_author = rtr_list[index].author
         rtr_time = rtr_list[index].time_ago
+        rtr_gld_icon = rtr_list[index].icon
 
     else:
         rtr_height = 0
@@ -350,12 +418,13 @@ def create_img(comment):
     author = comment_list[index].author
     score = comment_list[index].score
     com_time = comment_list[index].time_ago
+    gld_icon = comment_list[index].icon
 
     # Gets size of several objects for later use
     img_w, img_h = img.size
 
     # Draws the header for the comment
-    def comment_img(fmt_com, auth, scr, tim):
+    def comment_img(fmt_com, auth, scr, tim, gld_icon):
         nonlocal line_spacing
         nonlocal line_height
         nonlocal indent
@@ -383,10 +452,12 @@ def create_img(comment):
 
         auth_w, auth_h = author_font.getsize(auth)
         scr_w, scr_h = author_font.getsize(formatted_points)
+        tm_w, tm_h = author_font.getsize(formatted_time)
 
         auth_x, auth_y = (indent, line_height)
         scr_x, scr_y = (auth_x + auth_w, line_height)
         tm_x, tm_y = (scr_x + scr_w, line_height)
+        gld_x, gld_y = (tm_x + tm_w, line_height)
 
         if box_mode:
             draw.rectangle([(prev_indent, line_height - .5*line_spacing), (1920 - 10*num, 15 + line_height + img_height - num*2)],
@@ -400,6 +471,7 @@ def create_img(comment):
         draw.text((tm_x, tm_y), formatted_time, font=time_font, fill=FOOTER_HEX)
 
         img.paste(COMMENT_VOTE_ICON, (arrow_indent, line_height), COMMENT_VOTE_ICON)
+        img.paste(gld_icon, (gld_x, gld_y), gld_icon)
 
         for string in fmt_com:
             line_height += line_spacing
@@ -417,11 +489,11 @@ def create_img(comment):
 
         num += 1
 
-    comment_img(formatted_comment, author, score, com_time)
+    comment_img(formatted_comment, author, score, com_time, gld_icon)
     if bool_reply(comment):
-        comment_img(formatted_reply, rep_author, rep_score, rep_time)
+        comment_img(formatted_reply, rep_author, rep_score, rep_time, rep_gld_icon)
     if bool_rtr(comment):
-        comment_img(formatted_rtr, rtr_author, rtr_score, rtr_time)
+        comment_img(formatted_rtr, rtr_author, rtr_score, rtr_time, rtr_gld_icon)
 
     photofilepath = IMG_DIR + str(index) + '.png'
     # img.show()
@@ -432,12 +504,12 @@ def create_txt(comment):
 
     filename = TXT_DIR + str(index) + '.0.txt'
     txt_to_save = open(filename, 'w', encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
-    txt_to_save.write(replace_me(comment, aud_rep, aud_rep_with))
+    txt_to_save.write(replace_me(comment, aud_rep, aud_rep_with, use_for_audio=True))
     txt_to_save.close()
     if bool_reply(comment):
         filename = TXT_DIR + str(index) + '.1.txt'
         txt_to_save = open(filename, 'w', encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
-        txt_to_save.write(replace_me(reply_list[index].string, aud_rep, aud_rep_with))
+        txt_to_save.write(replace_me(reply_list[index].string, aud_rep, aud_rep_with, use_for_audio=True))
         txt_to_save.close()
     else:
         pass
@@ -445,7 +517,7 @@ def create_txt(comment):
     if bool_rtr(comment):
         filename = TXT_DIR + str(index) + '.2.txt'
         txt_to_save = open(filename, 'w', encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
-        txt_to_save.write(replace_me(rtr_list[index].string, aud_rep, aud_rep_with))
+        txt_to_save.write(replace_me(rtr_list[index].string, aud_rep, aud_rep_with, use_for_audio=True))
         txt_to_save.close()
     else:
         pass
@@ -550,17 +622,26 @@ def create_clip(comment):
     return c_clip
 
 
-def replace_me(string, to_replace, replace_with):
+def replace_me(string, to_replace, replace_with, use_for_audio=False):
     if len(to_replace) != len(replace_with):
         CRASH
     for item1, item2 in zip(to_replace, replace_with):
         string = string.replace(item1, item2)
+    if use_for_audio:
+        if RedditTitle.subreddit == 'relationships' or 'relationship_advice':
+            # string = re.sub(r'[\(\[]?[0-9]+[FfMm][\)\]]? ', r'\0', string)
+            pass
+
     return string
 
 
 def create_sub():
     size = 20
     width = 180
+    subreddit = str(RedditTitle.subreddit)
+    body_nolinks = re.sub(r"\[(.+)\]\(.+\)", r"\1", RedditTitle.body)
+    body_nolinks = re.sub(r'https?:\/\/.*[\r\n]*', '', body_nolinks)
+    body_nolinks = replace_me(body_nolinks, all_rep, all_rep_with)
 
     author_font = ImageFont.truetype('CustFont/Verdana.ttf', 15)
     score_font = ImageFont.truetype('CustFont/verdanab.ttf', size - 3)
@@ -570,7 +651,7 @@ def create_sub():
     footer_font = ImageFont.truetype('CustFont/verdanab.ttf', size - 6)
 
     formatted_title = textwrap.wrap(RedditTitle.title, width=width)
-    formatted_body = textwrap.wrap(RedditTitle.body, width=width + 8)
+    formatted_body = textwrap.wrap(body_nolinks, width=width + 8)
     post_date_by = 'submitted ' + human_time(RedditTitle.created) + ' by '
     footer = str(RedditTitle.num_com) + ' comments  source  share  save  hide  give award  report  crosspost  ' \
                                         'hide all child comments'
@@ -622,55 +703,17 @@ def create_sub():
 
     temp = BACKGROUND.copy()
 
-    if RedditTitle.body != '':
-        # Draws a rectangle at line spacing + large space
-        # large_space - small_space is used to negate the previous addition to line height
-        len_body = len(formatted_body)
-        line_height += large_space
-        sub_draw.rectangle([indent_spacing, line_height - medium_space, 1920 - 100, small_space + line_height +
-                            len_body * line_spacing], fill=None, outline='#cccccc', width=1)
-
-        # Creates Text Body
-        for line in formatted_body:
-            index = formatted_body.index(line)
-            sub_draw.text((indent_spacing + 10, line_height), line, font=body_font, fill='#dddddd')
-            line_height = line_height + line_spacing
-            temp.save(IMG_DIR + f'body.{index}.png')
-        del line
-        more_spacing = 0
-
-        filename = TXT_DIR + 'body.txt'
-        body_txt_file = open(filename, 'w',
-                              encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
-        body_txt_file.write(replace_me(RedditTitle.body, aud_rep, aud_rep_with))
-        body_txt_file.close()
-
-        os.chdir(BALCON_DIR)  # changes command line directory for the balcon utility
-        txt_file = 'body.txt'
-        wav_file = 'body.wav'
-        balcom = f'balcon -f "Subs\\Sub1\\Txt\\{txt_file}" -w "Subs\\Sub1\\Wav\\{wav_file}" -n "ScanSoft Daniel_Full_22kHz"'
-        os.system(balcom)
-        while not os.path.isfile(WAV_DIR + 'body.wav'):
-            time.sleep(.12)
-
-        body_aclip = AudioFileClip(WAV_DIR + 'body.wav')
-
-        for i in range(len_body):
-            body_iclip = ImageClip(IMG_DIR + f'body.{i}.png').set_duration(body_aclip.duration)
-            body_vclip = body_iclip.set_audio(body_aclip)
-            body_vclip = concatenate_videoclips([body_vclip, TRANSITION])
-
-    # Places Space Then Draws Footer
-    line_height += medium_space + more_spacing
-    sub_draw.text((indent_spacing, line_height), footer, font=footer_font, fill=FOOTER_HEX)
-
-    temp.paste(sub_img, (0, 540 - int(.5 * sub_height)), sub_img)
-
-    temp.save(IMG_DIR + 'title.png')
     filename = TXT_DIR + 'title.txt'
-    title_txt_file = open(filename, 'w', encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
-    title_txt_file.write(replace_me(RedditTitle.title, aud_rep, aud_rep_with))
-    title_txt_file.close()
+    with open(filename, 'w', encoding='utf-8') as title_txt:  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
+        title_txt.write(replace_me(RedditTitle.title, aud_rep, aud_rep_with, use_for_audio=True))
+    print(subreddit)
+
+    formatted_sub = subreddit.replace('_', ' ').replace('AmItheAsshole', 'Am I The Asshole')
+    formatted_sub = re.sub(r"(\w)([A-Z])", r"\1 \2", formatted_sub)
+    formatted_sub = f'r/ {formatted_sub}'
+
+    with open(TXT_DIR + 'sub_text.txt', 'w', encoding='utf-8') as sub_txt:
+        sub_txt.write(formatted_sub)
 
     os.chdir(BALCON_DIR)  # changes command line directory for the balcon utility
     txt_file = 'title.txt'
@@ -680,11 +723,84 @@ def create_sub():
     while not os.path.isfile(WAV_DIR + 'title.wav'):
         time.sleep(.12)
 
+    os.chdir(BALCON_DIR)  # changes command line directory for the balcon utility
+    txt_file = 'sub_text.txt'
+    wav_file = 'sub_text.wav'
+    balcom = f'balcon -f "Subs\\Sub1\\Txt\\{txt_file}" -w "Subs\\Sub1\\Wav\\{wav_file}" -n "ScanSoft Daniel_Full_22kHz"'
+    os.system(balcom)
+    while not os.path.isfile(WAV_DIR + 'sub_text.wav'):
+        time.sleep(.12)
+
+    sub_aclip = AudioFileClip(WAV_DIR + 'sub_text.wav')
     title_aclip = AudioFileClip(WAV_DIR + 'title.wav')
-    title_iclip = ImageClip(IMG_DIR + 'title.png').set_duration(title_aclip.duration)
-    title_vclip = title_iclip.set_audio(title_aclip)
-    title_vclip = concatenate_videoclips([title_vclip, TRANSITION])
-    return title_vclip
+    title_aclip = concatenate_audioclips([sub_aclip, LASAGNA, title_aclip, LASAGNA])
+
+    if RedditTitle.body != '':
+        # Draws a rectangle at line spacing + large space
+        # large_space - small_space is used to negate the previous addition to line height
+        len_body = len(formatted_body)
+        line_height += large_space
+        sub_draw.rectangle([indent_spacing, line_height - medium_space, 1920 - 100, small_space + line_height +
+                            len_body * line_spacing], fill=None, outline='#cccccc', width=1)
+
+        body_iclips = []
+
+        filename = TXT_DIR + 'body.txt'
+        body_txt_file = open(filename, 'w',
+                              encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
+        body_txt_file.write(replace_me(body_nolinks, aud_rep, aud_rep_with, use_for_audio=True))
+        body_txt_file.close()
+
+        os.chdir(BALCON_DIR)  # changes command line directory for the balcon utility
+        txt_file = 'body.txt'
+        wav_file = 'body.wav'
+        balcom = f'balcon -f "Subs\\Sub1\\Txt\\{txt_file}" -w "Subs\\Sub1\\Wav\\{wav_file}" -n "ScanSoft Daniel_Full_22kHz"'
+        os.system(balcom)
+        while not os.path.isfile(WAV_DIR + 'body.wav'):
+            time.sleep(.12)
+        body_aclip = AudioFileClip(WAV_DIR + 'body.wav')
+
+        sum_body = sum(len(fff) for fff in formatted_body)
+
+        temp.paste(sub_img, (0, 540 - int(.5 * sub_height)), sub_img)
+        temp.save(IMG_DIR + 'title.png')
+        title_vclip = ImageClip(IMG_DIR + 'title.png').set_audio(title_aclip).set_duration(title_aclip.duration)
+
+        # Creates Text Body
+        for line in formatted_body:
+            index = formatted_body.index(line)
+            sub_draw.text((indent_spacing + 10, line_height), line, font=body_font, fill='#dddddd')
+            line_height = line_height + line_spacing
+
+            if line == formatted_body[-1]:
+                line_height += medium_space
+                sub_draw.text((indent_spacing, line_height), footer, font=footer_font, fill=FOOTER_HEX)
+            temp.paste(sub_img, (0, 540 - int(.5 * sub_height)), sub_img)
+
+            temp.save(IMG_DIR + f'body.{index}.png')
+
+            factor = len(line)/sum_body
+            print(str(factor))
+            body_iclips.append(ImageClip(IMG_DIR + f'body.{index}.png').set_duration(factor * body_aclip.duration))
+        del line
+
+        body_iclip = concatenate_videoclips(body_iclips)
+        body_vclip = body_iclip.set_audio(body_aclip)
+        body_vclip = concatenate_videoclips([title_vclip, body_vclip, TRANSITION])
+
+        return body_vclip
+    else:
+        # Places Space Then Draws Footer
+        line_height += medium_space + more_spacing
+        sub_draw.text((indent_spacing, line_height), footer, font=footer_font, fill=FOOTER_HEX)
+
+        temp.paste(sub_img, (0, 540 - int(.5 * sub_height)), sub_img)
+        temp.save(IMG_DIR + 'title.png')
+
+        title_iclip = ImageClip(IMG_DIR + 'title.png').set_duration(title_aclip.duration)
+        title_vclip = title_iclip.set_audio(title_aclip)
+        title_vclip = concatenate_videoclips([title_vclip, TRANSITION])
+        return title_vclip
 
 
 def cleanup():
@@ -821,7 +937,7 @@ def create_thumbnail():
 def data_collection():
     csv_row = [str(charSum), str(final.duration), str(number_comments), str(threshold), str(datetime.datetime.now()),
                str(reddit_link)]
-    with open('MLData.csv', 'a') as f:
+    with open('program_data.csv', 'a', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(csv_row)
 
@@ -867,7 +983,7 @@ reg.fit(df[['char_len', 'num_com', 'threshold']], df.duration)
 def estimate_time():
     global estimated_time
     global charSum
-    charSum = len(str(RedditTitle.title))
+    charSum = len(str(RedditTitle.title)) + len(RedditTitle.body)
     for x in str_comment_list[:number_comments]:
         gh = str_comment_list.index(x)
         charSum = charSum + len(x)
@@ -924,7 +1040,7 @@ def metadata():
     )
     data = {
         'title': RedditTitle.title + ' (r/AskReddit)',
-        'description': 'r/AskReddit Videos! Welcome back to a brand new Reddit Genie video!'
+        'description': f'r/{str(RedditTitle.subreddit)} Videos! Welcome back to a brand new Reddit Genie video!'
                        '\n\n🔔 Hit the bell next to Subscribe so you never miss a video!'
                        '\n🏆 Like, Comment and Subscribe if you are new on the channel!'
                        '\n👱🏻‍♂️ Comment "Reddit Genie Rulez!" if you are still reading this for a cookie!'
@@ -965,6 +1081,45 @@ def metadata():
         desc.write(data['description'])
 
 
+'''
+def make_ghetto_clip(text, filename):
+    txt_path = f'{TXT_DIR}{filename}.txt'
+    wav_path = f'{WAV_DIR}{filename}.wav'
+    img_path = f'{IMG_DIR}{filename}.png'
+
+    with open(txt_path) as txt_file:
+        txt_file.write(text)
+
+    os.chdir(BALCON_DIR)  # changes command line directory for the balcon utility
+    txt_file = f'{filename}.txt'
+    wav_file = f'{filename}.wav'
+    balcom = f'balcon -f "Subs\\Sub1\\Txt\\{txt_file}" -w "Subs\\Sub1\\Wav\\{wav_file}" -n "ScanSoft Daniel_Full_22kHz"'
+    os.system(balcom)
+    while not os.path.isfile(WAV_DIR + 'title.wav'):
+        time.sleep(.12)
+
+    a_clip = AudioFileClip(wav_path)
+    i_clip = ImageClip(img_path).set_duration(a_clip.duration)
+    i_clip.set_audio(a_clip)
+
+'''
+
+
+def balcon_it(text, filename):
+    txt_path = f'{TXT_DIR}{filename}.txt'
+
+    with open(txt_path) as txt_file:
+        txt_file.write(text)
+
+    os.chdir(BALCON_DIR)  # changes command line directory for the balcon utility
+    txt_file = f'{filename}.txt'
+    wav_file = f'{filename}.wav'
+    balcom = f'balcon -f "Subs\\Sub1\\Txt\\{txt_file}" -w "Subs\\Sub1\\Wav\\{wav_file}" -n "ScanSoft Daniel_Full_22kHz"'
+    os.system(balcom)
+    while not os.path.isfile(WAV_DIR + 'title.wav'):
+        time.sleep(.12)
+
+
 def upload_video():
     shutil.copy2(video_path, UPLOAD_DIR)
     shutil.copy2(VID_DIR + 'thumb.png', UPLOAD_DIR)
@@ -979,13 +1134,24 @@ def upload_video():
     print(command)
 
 
+def insensitive_replace_list(find_list, replace_list, end_of_stmt=['.', '?', '!', ',', ' ', '\n', '</?']):
+    for n, i in enumerate(find_list):
+        find_list[n] = cc(i)
+    for n, i in enumerate(replace_list):
+        replace_list[n] = [str(i) for j in find_list[n]]
+
+    find_list = list(itertools.chain(*find_list))
+    replace_list = list(itertools.chain(*replace_list))
+
+    find_list = [k + end_of_stmt[end_of_stmt.index(i)] for k in find_list for i in end_of_stmt]
+    replace_list = [k + end_of_stmt[end_of_stmt.index(i)] for k in replace_list for i in end_of_stmt]
+
+    return find_list, replace_list
+
+
 reddit = praw.Reddit(client_id='BHUtkEY0x4vomA', client_secret='MZvTVUs83p8wEN_Z8EU8bIUjGTY',
                      user_agent='pulling posts')
-speed = int(input('Type your preferred speed 0 = fastmode, 1 = regular\n'))
-reddit_link = input('Paste your desired reddit post:\n')
 submission = reddit.submission(url=reddit_link)
-desired_vid_len = int(input('Enter your maximum desired video length (seconds):\n'))
-bgrd_choice = 2  # int(input('\nType your background color option [0 = Transparent, 1 = Default, 2 = Black]\n'))
 
 
 class RedditTitle:
@@ -1013,28 +1179,37 @@ str_comment_list = []
 reply_list = []
 rtr_list = []
 # Replacement lists
-aud_rep, aud_rep_with = ['’', '‘', '”', '“', '*', ';', '^', '\\', '/', '_', 'coworker', 'Coworker', 'tbh'], \
-                        ["'", "'", '"', '"', '', '', '', '', '', ' ', 'co-worker', 'co-worker', 'to be honest']
+aud_rep, aud_rep_with = ['’', '‘', '”', '“', '*', ';', '^', '\\', '/', '_'], \
+                        ["'", "'", '"', '"', '', '', '', '', '', ' ']
 viz_rep, viz_rep_with = [], []
 all_rep, all_rep_with = ['&#x200B'], ['']
 
-lol, haha = ['LOL ', 'lol ', 'Lol ', 'LOL.', 'lol.', 'Lol.'], ['haha ', 'haha ', 'haha ', 'haha.', 'haha.', 'haha.']
-emote1, emote2 = [':)', '(:', ':(', '):'], ['smiley', 'smiley', 'sad face', 'sad face']
+aita_1, aita_2 = insensitive_replace_list(
+    ['aita', 'yta', 'nta', 'esh'],
+    ['am i the asshole', 'you\'re the asshole', 'not the asshole', 'everyone sucks here']
+)
+sms_1, sms_2 = insensitive_replace_list(
+    ['lol ', 'lol.', 'jk', 'smh', 'stfu', 'nvm', 'tbh', 'tifu'],  # MIL, Mother in Law
+    ['el oh el', 'el oh el.', 'just kidding', 'shake my head', 'shut the fuck up', 'nevermind', 'to be honest', 'today i fucked up']
+)
+common_mispronunciations_1, common_mispronunciations_2 = insensitive_replace_list(
+    ['coworker', 'facebook'],
+    ['co-worker', 'face book']
+)
+
 
 # Appends replacement lists in a way that saves space
-aud_rep.extend(lol)
-aud_rep_with.extend(haha)
-aud_rep.extend(emote1)
-aud_rep_with.extend(emote2)
+aud_rep.extend(aita_1)
+aud_rep_with.extend(aita_2)
+aud_rep.extend(sms_1)
+aud_rep_with.extend(sms_2)
 
 del_vid = True
 cleanup()
 
 # Creates all information for the program
 create_thumbnail()
-fill_comment_items()
-fill_reply_items()
-fill_rtr_items()
+fill_all()
 
 # This block is used for getting the video length within a certain range
 estimate_time()
@@ -1077,11 +1252,11 @@ if speed == 0:
         temp_thread = threading.Thread(target=video_creation, args=(com,))
         thread.append(temp_thread)
         thread[ind].start()
-    del ind
+
     for com in str_comment_list[:number_comments]:
         ind = str_comment_list.index(com)
         thread[ind].join()
-    del ind
+
 else:
     for com in str_comment_list[:number_comments]:
         video_creation(com)
@@ -1120,7 +1295,7 @@ metadata()
 # upload_video()
 
 # Collects data to help the program run better
-# data_collection()
+data_collection()
 print('\n')
 cleanup()
 
