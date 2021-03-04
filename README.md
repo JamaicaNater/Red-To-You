@@ -19,6 +19,8 @@ pandas (Used in AI)
 sklearn (AI Engine)
 mp3_tagger (Gets information from the mp3 files in the mp3 folder
 itertools
+
+In addition, you will need to provide your own NewError.mp4 (transiton) and outro.mp4 (video outro) in the Static folder
 # Using the Program
 Upon launching the program, the user will be asked whether they would like to have their video created using the classic version of reddit or the redesigned version of reddit 
 
