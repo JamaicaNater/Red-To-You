@@ -29,11 +29,11 @@ json
 
 csv (AI is fed a CSV)
 
-pandas (Used in AI)
+pandas (used in AI)
 
 sklearn (AI Engine)
 
-mp3_tagger (Gets information from the mp3 files in the mp3 folder
+mp3_tagger (gets information from the mp3 files in the mp3 folder)
 
 itertools
 
@@ -53,6 +53,7 @@ The next option, backgrounds color, is only applicable to users who plan on uplo
 Next the user is prompted for a title they would like for their thumbnail, this is only needed when the title of the post exceeds 100 characters causing the text to drop off the image
 
 ![image](https://user-images.githubusercontent.com/52978102/110018083-8e82e080-7cec-11eb-9271-f6a2947c119d.png)
+
 # What is Happening ?
 The program first starts by gathering data from the reddit link that the user has inserted. Then the program calculates the length in time that it estimates the Text to Speech API will take to read text file based on the sklearn python prediction library. A loop is then created and is run until the program finds a satisfactory time for the program.
 One this step is done; the program creates temporary files used in the creation of the video file. The program also cleans up the previous folder in the case that the program didn’t exit successfully the first time.
@@ -106,5 +107,5 @@ Because the program is built to be used by youtubers, the program also generates
 
 The program as present relies on a windows-only command line utility called Balcon meaning there is no Linux support planned.
 # Beta 
-Currently I am working on a system that runs in an infinite loop that uploads video at set intervals throughout the day with no user input, a fully automated YouTube Channel, stay tuned.
+Currently, I am working on a system that runs in an infinite loop that uploads video at set intervals throughout the day with no user input, a fully automated YouTube Channel, stay tuned.
 
