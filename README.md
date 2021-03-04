@@ -107,5 +107,5 @@ Because the program is built to be used by youtubers, the program also generates
 
 The program as present relies on a windows-only command line utility called Balcon meaning there is no Linux support planned.
 # Beta 
-Currently, I am working on a system that runs in an infinite loop that uploads video at set intervals throughout the day with no user input, a fully automated YouTube Channel, stay tuned.
+Currently, I am working on a system that runs in an infinite loop that uploads video at set intervals throughout the day with no user input, a fully automated YouTube Channel.
 
