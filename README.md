@@ -31,3 +31,6 @@ After, the user will be prompted to enter and upper bound for their desired vide
 The next option, backgrounds color, is only applicable to users who plan on uploading their video to the web. The prompt asks the user what color background they would like their YouTube thumbnail, to be.
 
 Next the user is prompted for a title they would like for their thumbnail, this is only needed when the title of the post exceeds 100 characters causing the text to drop off the image
+
+![image](https://user-images.githubusercontent.com/52978102/110018083-8e82e080-7cec-11eb-9271-f6a2947c119d.png)
+
