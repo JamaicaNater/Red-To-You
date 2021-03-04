@@ -21,9 +21,13 @@ mp3_tagger (Gets information from the mps files in the mp3 folder
 itertools
 # Using the Program
 Upon lanching the program th used will be asked whether they would like have thier video created using the classic version of reddit or the redesigned version of reddit 
-![image](https://user-images.githubusercontent.com/52978102/110015748-d9e7bf80-7ce9-11eb-97ec-fdc2d9fc595e.png)
+
 Simply type 1 or 0 for your prefered mode
+
 Next the the user will be asked if they would like to run the progrma in single threaded or multithreaded mode.
 It is recommended that users with ram ammounts below 16GB run the program in single threaded mode to minimize the number of objects in memeory
+
 After, the user will be prompted to enter and upper bound for thier desired video length (the ai will run until it finds which posts to include to get a time in the acceptable range. It is recommended that the user enter a number roughly 30 secs higher than the time they deisire
-the next option color is only appplicappple to users who plan on uploadiin ghtier video to the web. The prompt asks the user what color backgorund they would like thier youtube thumbnail, to be.
+The next option, backgrounds color, is only applicappple to users who plan on uploading thier video to the web. The prompt asks the user what color backgorund they would like thier youtube thumbnail, to be.
+
+Next the user is prompted for a title they would like for thier thumbnail, this is only needed when the title of the post exceeds 100 characters causing the text to drop off the image
