@@ -2,25 +2,43 @@
 RedToYou is a python-based program that aims to convert reddit threads to interactive videos suitable for personal viewing or alternatively uploading to YouTube (hence the name Red(dit)ToYou(tube))
 # Setup
 Before running the program, it is required that the user installs python as well as pip (pythons package manager)
-after installing python and pip you will need to install the following python libraries
+
+After installing python and pip you will need to install the following python libraries:
+
 praw (library for interacting with reddit's API)
+
 PIL (library for image creation)
+
 time
+
 datetime
+
 shutil (for file deletion)
+
 re
+
 glob (to import files matching a specific pattern)
+
 random
+
 threading (for multi-threading)
+
 timeit (AI is used to calculate the length of time it will take to render the video based on number gathered from this library)
+
 json
+
 csv (AI is fed a CSV)
+
 pandas (Used in AI)
+
 sklearn (AI Engine)
+
 mp3_tagger (Gets information from the mp3 files in the mp3 folder
+
 itertools
 
 In addition, you will need to provide your own NewError.mp4 (transiton) and outro.mp4 (video outro) in the Static folder as well as populate your own tagged music (mp3) in Static/DynamicMusic
+
 # Using the Program
 Upon launching the program, the user will be asked whether they would like to have their video created using the classic version of reddit or the redesigned version of reddit 
 
