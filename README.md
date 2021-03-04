@@ -75,9 +75,9 @@ Next the  program show the user the estimated video length as well as how many r
 ![image](https://user-images.githubusercontent.com/52978102/110021933-fc310b80-7cf0-11eb-8518-983d5fadee52.png)
  
 The program also gives the user feedback as the program progresses
-	If the user uses multithreaded processes these number will be out of order however shorter comments will appear first in the video
-	If the user uses single threaded, comments will match the order they appear in the thread
-	In both cases, however the program scrambles the order in with the comments appear
+*	If the user uses multithreaded processes these number will be out of order however shorter comments will appear first in the video
+*	If the user uses single threaded, comments will match the order they appear in the thread
+*	In both cases, however the program scrambles the order in with the comments appear
 Because video and audio as computed separate, we can give the user that actual video length quickly, before the video begins to render, this give the user to option to quit the program and enter an alternate value before waited for the file to render.
 
 ![image](https://user-images.githubusercontent.com/52978102/110022026-12d76280-7cf1-11eb-8437-090a3aa0ae7d.png)
