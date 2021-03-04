@@ -82,7 +82,7 @@ After the program runs, diagnostic information such as the total number of chara
  
 Because the program is built to be used by youtubers, the program also generates a description file with can the easily copied into YouTube
 
-![image](https://user-images.githubusercontent.com/52978102/110022406-7f526180-7cf1-11eb-9cf3-9d4ca9fb2659.png)
+![image](https://user-images.githubusercontent.com/52978102/110023751-2388d800-7cf3-11eb-9e83-b25024151b13.png)
 
 The program as present relies on a windows-only command line utility called Balcon meaning there is no Linux support planned.
 # Beta 
