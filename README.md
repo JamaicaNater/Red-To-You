@@ -56,7 +56,7 @@ Next the user is prompted for a title they would like for their thumbnail, this 
 
 # What is Happening ?
 The program first starts by gathering data from the reddit link that the user has inserted. Then the program calculates the length in time that it estimates the Text to Speech API will take to read text file based on the sklearn python prediction library. A loop is then created and is run until the program finds a satisfactory time for the program.
-One this step is done; the program creates temporary files used in the creation of the video file. The program also cleans up the previous folder in the case that the program didn’t exit successfully the first time.
+Once this step is done, the program creates temporary files used in the creation of the video file. The program also cleans up the previous folder in the case that the program didn’t exit successfully the first time.
 
 ![image](https://user-images.githubusercontent.com/52978102/110021874-e7547800-7cf0-11eb-8298-b9d3c16782dd.png)
 
