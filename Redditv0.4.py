@@ -16,27 +16,6 @@ import pandas as pd  # need pip
 from sklearn import linear_model  # need pip
 from mp3_tagger import MP3File, VERSION_1, VERSION_2, VERSION_BOTH
 import itertools
-# import copy
-#
-# def print_backup(var):
-#     copy.deepcopy(print())
-# def print(var):
-#     sys.stdout.write(var)
-#     sys.stdout.write("hwow")
-#
-# print("test")
-
-
-'''
-        time.sleep(1)
-
-        with open(f'Subs/Sub1/Txt/{txt_file}', 'r') as content_file:
-            content = content_file.read()
-        dur = AudioFileClip(f'Subs/Sub1/Wav/{wav_file}').duration
-        with open('char_data.csv', 'a') as dt:
-            app = csv.writer(dt)
-            app.writerow([content, dur])
-'''
 
 mode = int(input('Mode; 0 = Redesign, 1 = Classic '))
 speed = int(input('\nSpeed; 0 = Multithreaded, 1 = Normal '))
@@ -788,7 +767,8 @@ def replace_me(string, to_replace, replace_with, use_for_audio=False):
     Return:
     """
     if len(to_replace) != len(replace_with):
-        CRASH
+        print("Error in replace_me")
+        sys.exit()
     for item1, item2 in zip(to_replace, replace_with):
         string = string.replace(item1, item2)
     if use_for_audio:
@@ -1296,30 +1276,6 @@ def metadata():
         desc.write(data['description'])
 
 
-'''
-def make_ghetto_clip(text, filename):
-    txt_path = f'{TXT_DIR}{filename}.txt'
-    wav_path = f'{WAV_DIR}{filename}.wav'
-    img_path = f'{IMG_DIR}{filename}.png'
-
-    with open(txt_path) as txt_file:
-        txt_file.write(text)
-
-    os.chdir(BALCON_DIR)  # changes command line directory for the balcon utility
-    txt_file = f'{filename}.txt'
-    wav_file = f'{filename}.wav'
-    balcom = f'balcon -f "Subs\\Sub1\\Txt\\{txt_file}" -w "Subs\\Sub1\\Wav\\{wav_file}" -n "ScanSoft Daniel_Full_22kHz"'
-    os.system(balcom)
-    while not os.path.isfile(WAV_DIR + 'title.wav'):
-        time.sleep(.12)
-
-    a_clip = AudioFileClip(wav_path)
-    i_clip = ImageClip(img_path).set_duration(a_clip.duration)
-    i_clip.set_audio(a_clip)
-
-'''
-
-
 def balcon_it(text, filename):
     txt_path = f'{TXT_DIR}{filename}.txt'
 
@@ -1384,18 +1340,18 @@ aita_1, aita_2 = insensitive_replace_list(
 
 # if these values are not changed the tts engine will read the arcronyms, leading to mispronunciations
 sms_1, sms_2 = insensitive_replace_list(
-    ['lol ', 'lol.', 'jk', 'smh', 'stfu', 'nvm', 'tbh', 'tifu'], 
+    ['lol ', 'lol.', 'jk', 'smh', 'stfu', 'nvm', 'tbh', 'tifu'],
     ['el oh el', 'el oh el.', 'just kidding', 'shake my head', 'shut the fuck up', 'nevermind', 'to be honest', 'today i fucked up']
 )
 
-# These are words that the TTS engine often mispronounces 
+# These are words that the TTS engine often mispronounces
 common_mispronunciations_1, common_mispronunciations_2 = insensitive_replace_list(
-    ['coworker', 'facebook'], //
+    ['coworker', 'facebook'],
     ['co-worker', 'face book']
 )
 # Censors swear words
 swear_1, swear_2 = insensitive_replace_list(
-    ['fuck', 'shit', 'bitch'], 
+    ['fuck', 'shit', 'bitch'],
     ['uck', 'sit', 'itch']
 )
 
