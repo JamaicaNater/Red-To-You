@@ -161,10 +161,10 @@ VID_DIR = 'Subs/Vid/'
 BALCON_DIR = os.path.dirname(os.path.abspath("balcon.exe"))
 UPLOAD_DIR = os.path.dirname(os.path.abspath('Upload/youtubeuploader_windows_amd64.exe')) + '\\'
 
-cWidth = 175
-rWidth = 168
-rtrWidth = 161
-VID_FPS = 15
+cWidth = 175    # Width between comments
+rWidth = 168    # Width between replies
+rtrWidth = 161  # Width between replies to replies
+VID_FPS = 15    # Video frames per second
 
 # Imported with Pillow
 BACKGROUND = Image.open('Static/backgroundblack.jpg').convert('RGBA')
@@ -253,6 +253,12 @@ def the_border(x, y, draw, font, text, width=1, outline='black', fill='white'):
 
 
 def human_time(post_datetime):
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     dif = datetime.datetime.now() - post_datetime + datetime.timedelta(hours=8)
     seconds = dif.total_seconds()
     minutes = seconds / 60
@@ -290,6 +296,12 @@ def human_time(post_datetime):
 
 
 def minute_format(num, round_to=2):
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     minutes = int(abs(num) / 60)
     seconds = round(abs(num) % 60, round_to)
     if num < 0:
@@ -302,6 +314,12 @@ def minute_format(num, round_to=2):
 
 
 def human_format(num, use_at=1000):
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     if num >= use_at:
         magnitude = 0
         while abs(num) >= 1000:
@@ -314,6 +332,12 @@ def human_format(num, use_at=1000):
 
 
 def bool_comment(comment):
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     index = str_comment_list.index(comment)
     if (comment_list[index].string != DNE) and (comment_list[index].score >= MIN_SCORE):
         if index == 0:
@@ -325,6 +349,12 @@ def bool_comment(comment):
 
 
 def bool_reply(comment):
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     index = str_comment_list.index(comment)
     if (reply_list[index].string != DNE) and (reply_list[index].score >= threshold * comment_list[index].score):
         return True
@@ -333,6 +363,12 @@ def bool_reply(comment):
 
 
 def bool_rtr(comment):
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     index = str_comment_list.index(comment)
     if bool_reply(comment) and (rtr_list[index].string != DNE) and (
             rtr_list[index].score >= reply_list[index].score * threshold):
@@ -342,6 +378,12 @@ def bool_rtr(comment):
 
 
 def fill_all():
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     for i in range(number_comments):  # gets all all comments saves them to a string
         # Creates the comments if they exist
         try:
@@ -445,6 +487,12 @@ def fill_all():
 
 
 def create_img(comment):
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     index = str_comment_list.index(comment)
     num = 0
     if mode == 0:
@@ -592,6 +640,12 @@ def create_img(comment):
 
 
 def create_txt(comment):
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     index = str_comment_list.index(comment)
 
     filename = TXT_DIR + str(index) + '.0.txt'
@@ -616,6 +670,12 @@ def create_txt(comment):
 
 
 def create_wav(comment):
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     index = str_comment_list.index(comment)
 
     def balcon(num):
@@ -638,6 +698,12 @@ def create_wav(comment):
 
 
 def create_clip(comment):
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     index = str_comment_list.index(comment)
 
     split_com = comment_list[index].split_self(cWidth)
@@ -715,6 +781,12 @@ def create_clip(comment):
 
 
 def replace_me(string, to_replace, replace_with, use_for_audio=False):
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     if len(to_replace) != len(replace_with):
         CRASH
     for item1, item2 in zip(to_replace, replace_with):
@@ -728,6 +800,12 @@ def replace_me(string, to_replace, replace_with, use_for_audio=False):
 
 
 def create_sub():
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     size = 20
     width = 180
     subreddit = str(RedditTitle.subreddit)
@@ -895,6 +973,12 @@ def create_sub():
 
 
 def cleanup():
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     global del_vid
     shutil.rmtree(IMG_DIR)
     print('Removed IMG')
@@ -934,7 +1018,19 @@ def cleanup():
 
 
 def create_thumbnail():
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     def color_options():
+        """
+        Function:
+        Definition:
+        Parameter:
+        Return:
+        """
         global bgrd_choice
 
         if bgrd_choice == 0:
@@ -1031,6 +1127,12 @@ def create_thumbnail():
 
 
 def data_collection():
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     csv_row = [str(charSum), str(final.duration), str(number_comments), str(threshold), str(datetime.datetime.now()),
                str(reddit_link)]
     with open('program_data.csv', 'a', newline='') as f:
@@ -1039,6 +1141,12 @@ def data_collection():
 
 
 def dynamic_music():
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     global song_sound
     global sound_desc
     song_sound = []
@@ -1077,6 +1185,12 @@ reg.fit(df[['char_len', 'num_com', 'threshold']], df.duration)
 
 
 def estimate_time():
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     global estimated_time
     global charSum
     charSum = len(str(RedditTitle.title)) + len(RedditTitle.body)
@@ -1097,6 +1211,12 @@ def estimate_time():
 
 
 def video_creation(thing):
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     index = str_comment_list.index(thing)
     create_txt(thing)
     create_wav(thing)
@@ -1129,6 +1249,12 @@ def video_creation(thing):
 
 
 def metadata():
+    """
+    Function:
+    Definition:
+    Parameter:
+    Return:
+    """
     str_tag = (
         'reddit, best of ask reddit, reddit, ask reddit top posts, r/story, r/ askreddit, r/askreddit, story time, '
         'reddify, bamboozled, brainydude, '
@@ -1250,20 +1376,26 @@ aud_rep, aud_rep_with = ['’', '‘', '”', '“', '*', ';', '^', '\\', '/', '
 viz_rep, viz_rep_with = [], []
 all_rep, all_rep_with = ['&#x200B'], ['']
 
+# if these values are not changed the tts engine will read the arcronyms, leading to mispronunciations
 aita_1, aita_2 = insensitive_replace_list(
     ['aita', 'yta', 'nta', 'esh'],
     ['am i the asshole', 'you\'re the asshole', 'not the asshole', 'everyone sucks here']
 )
+
+# if these values are not changed the tts engine will read the arcronyms, leading to mispronunciations
 sms_1, sms_2 = insensitive_replace_list(
-    ['lol ', 'lol.', 'jk', 'smh', 'stfu', 'nvm', 'tbh', 'tifu'],  # MIL, Mother in Law
+    ['lol ', 'lol.', 'jk', 'smh', 'stfu', 'nvm', 'tbh', 'tifu'], 
     ['el oh el', 'el oh el.', 'just kidding', 'shake my head', 'shut the fuck up', 'nevermind', 'to be honest', 'today i fucked up']
 )
+
+# These are words that the TTS engine often mispronounces 
 common_mispronunciations_1, common_mispronunciations_2 = insensitive_replace_list(
-    ['coworker', 'facebook'],
+    ['coworker', 'facebook'], //
     ['co-worker', 'face book']
 )
+# Censors swear words
 swear_1, swear_2 = insensitive_replace_list(
-    ['fuck', 'shit', 'bitch'],
+    ['fuck', 'shit', 'bitch'], 
     ['uck', 'sit', 'itch']
 )
 
