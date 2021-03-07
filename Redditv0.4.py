@@ -217,11 +217,19 @@ OUTRO = VideoFileClip('Static/outro.mp4').set_fps(VID_FPS)
 LASAGNA = AudioFileClip('Static/lasagna.wav').set_duration(.33)
 
 
-def cc(s):
+def permutate_word(s):
+    """
+    Function:   permutate_word
+    Definition: this function accepts a word and returns a list of all possible capitalisations for a given word
+    Parameter:  a string
+    Return:     a list of strings
+    """
+
     return list(''.join(t) for t in itertools.product(*zip(s.lower(), s.upper())))
 
 
-def the_border(x, y, draw, font, text, width=1, outline='black', fill='white'):
+def draw_outlined_text(x, y, draw, font, text, width=1, outline='black', fill='white'):
+
     draw.text((x - width, y - width), text, font=font, fill=outline)
     draw.text((x + width, y - width), text, font=font, fill=outline)
     draw.text((x - width, y + width), text, font=font, fill=outline)
@@ -233,10 +241,12 @@ def the_border(x, y, draw, font, text, width=1, outline='black', fill='white'):
 
 def human_time(post_datetime):
     """
-    Function:
-    Definition:
-    Parameter:
-    Return:
+    Function:   human_time
+    Definition: The function accepts a given date time object and calculates the difference between the current point
+                in time and the time given by the parameter.
+                The function then returns a roughly accurate human readable representation of the time difference
+    Parameter:  a datetime object ( time posted )
+    Return:     a string
     """
     dif = datetime.datetime.now() - post_datetime + datetime.timedelta(hours=8)
     seconds = dif.total_seconds()
@@ -276,46 +286,49 @@ def human_time(post_datetime):
 
 def minute_format(num, round_to=2):
     """
-    Function:
-    Definition:
-    Parameter:
-    Return:
+    Function:   minute_format
+    Definition: The function receives time in seconds which it the converts to minutes using a simple algorithm.
+                The remainder is then reconverted back in to seconds and rounds to what ever number is needed
+                After, seconds and minutes are formatted according to their value
+    Parameter:  num (seconds), round_to (decimal places to round to)
+    Return:     a string
     """
     minutes = int(abs(num) / 60)
     seconds = round(abs(num) % 60, round_to)
-    if num < 0:
+
+    if num < 0:         # in the case that the number is negative
         minutes = '-' + str(minutes)
-    if round_to == 0:
-        seconds = int(seconds)
     if seconds < 10:
         seconds = '0' + str(seconds)
     return str(minutes) + ':' + str(seconds)
 
 
-def human_format(num, use_at=1000):
+def abbreviate_number(num, use_at=1000):
     """
-    Function:
-    Definition:
-    Parameter:
-    Return:
+    Function:   abbreviate_number
+    Definition: This function takes a given number as shortens it.
+                eg. 1000000 becomes 1M, and 1000 becomes 1k
+    Parameter:  num
+    Return:     an abbreviated string of the original number
     """
     if num >= use_at:
         magnitude = 0
         while abs(num) >= 1000:
             magnitude += 1
             num /= 1000.0
-        # add more suffixes if you need them
-        return '%.1f%s' % (num, ['', 'k', 'M', 'G', 'T', 'P'][magnitude])
+        return '%.1f%s' % (num, ['', 'k', 'M', 'G', 'T', 'P'][magnitude])  # suffixes
     else:
-        return num
+        return str(num)
 
 
-def bool_comment(comment):
+def use_comment(comment):
     """
-    Function:
-    Definition:
-    Parameter:
-    Return:
+    Function:   use_comment
+    Definition: This function determines whether or not we will use a comment in our program.
+                we make this determination by checking if a comment was flagged with DNE upon initialisation; we also
+                check to see if the comment meets the minimum score criteria.
+    Parameter:  Reddit_Item
+    Return:     boolean
     """
     index = str_comment_list.index(comment)
     if (comment_list[index].string != DNE) and (comment_list[index].score >= MIN_SCORE):
@@ -327,12 +340,16 @@ def bool_comment(comment):
         return False
 
 
-def bool_reply(comment):
+def use_reply(comment):
     """
-    Function:
-    Definition:
-    Parameter:
-    Return:
+    Function:   use_reply
+    Definition: This function determines whether or not we will use a reply in our program.
+                we make this determination by checking if a reply was flagged with DNE upon initialisation; we also
+                check to see if the comment meets the minimum score criteria.
+                This is determined by checking if the score multiplied by the threshold is greater than or equal to
+                the original comment
+    Parameter:  Reddit_Item
+    Return:     boolean
     """
     index = str_comment_list.index(comment)
     if (reply_list[index].string != DNE) and (reply_list[index].score >= threshold * comment_list[index].score):
@@ -341,27 +358,31 @@ def bool_reply(comment):
         return False
 
 
-def bool_rtr(comment):
+def use_rtr(comment):
     """
     Function:
-    Definition:
-    Parameter:
-    Return:
+    Definition: This function determines whether or not we will use a reply in our program.
+                First, we check if we even used a reply, then we check if a rtr was flagged with DNE upon
+                initialisation; we also check to see if the comment meets the minimum score criteria.
+                This is determined by checking if the score multiplied by the threshold is greater than or equal to
+                the original comment.
+    Parameter:  Reddit_Item
+    Return:     boolean
     """
     index = str_comment_list.index(comment)
-    if bool_reply(comment) and (rtr_list[index].string != DNE) and (
+    if use_reply(comment) and (rtr_list[index].string != DNE) and (
             rtr_list[index].score >= reply_list[index].score * threshold):
         return True
     else:
         return False
 
 
-def fill_all():
+def populate_lists():
     """
-    Function:
+    Function: populate_lists
     Definition:
-    Parameter:
-    Return:
+    Parameter: NONE
+    Return: NONE
     """
     for i in range(number_comments):  # gets all all comments saves them to a string
         # Creates the comments if they exist
@@ -497,7 +518,7 @@ def create_img(comment):
     time_font = ImageFont.truetype(TIME_FONT_DIR, alt_font_size)
     footer_font = ImageFont.truetype(FOOTER_FONT_DIR, redesign_footer_font)
 
-    if bool_reply(comment):
+    if use_reply(comment):
         formatted_reply = reply_list[index].split_self(rWidth)
         rep_len = len(formatted_reply)
         rep_height = large_space + line_spacing * rep_len + medium_space
@@ -509,7 +530,7 @@ def create_img(comment):
     else:
         rep_height = 0
 
-    if bool_rtr(comment):
+    if use_rtr(comment):
         formatted_rtr = rtr_list[index].split_self(rtrWidth)
         rtr_len = len(formatted_rtr)
         rtr_height = large_space + line_spacing * rtr_len + medium_space
@@ -550,7 +571,7 @@ def create_img(comment):
             auth = '[–] ' + auth
 
         formatted_time = f'{tim}'
-        formatted_points = f'  {str(human_format(scr, 10000))} points  '
+        formatted_points = f'  {str(abbreviate_number(scr, 10000))} points  '
         prev_indent = indent
         indent += 40
 
@@ -609,9 +630,9 @@ def create_img(comment):
         num += 1
 
     comment_img(formatted_comment, author, score, com_time, gld_icon)
-    if bool_reply(comment):
+    if use_reply(comment):
         comment_img(formatted_reply, rep_author, rep_score, rep_time, rep_gld_icon)
-    if bool_rtr(comment):
+    if use_rtr(comment):
         comment_img(formatted_rtr, rtr_author, rtr_score, rtr_time, rtr_gld_icon)
 
     photofilepath = IMG_DIR + str(index) + '.png'
@@ -631,7 +652,7 @@ def create_txt(comment):
     txt_to_save = open(filename, 'w', encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
     txt_to_save.write(replace_me(comment, aud_rep, aud_rep_with, use_for_audio=True))
     txt_to_save.close()
-    if bool_reply(comment):
+    if use_reply(comment):
         filename = TXT_DIR + str(index) + '.1.txt'
         txt_to_save = open(filename, 'w', encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
         txt_to_save.write(replace_me(reply_list[index].string, aud_rep, aud_rep_with, use_for_audio=True))
@@ -639,7 +660,7 @@ def create_txt(comment):
     else:
         pass
 
-    if bool_rtr(comment):
+    if use_rtr(comment):
         filename = TXT_DIR + str(index) + '.2.txt'
         txt_to_save = open(filename, 'w', encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
         txt_to_save.write(replace_me(rtr_list[index].string, aud_rep, aud_rep_with, use_for_audio=True))
@@ -666,11 +687,11 @@ def create_wav(comment):
         # print(command)
 
     balcon(0)
-    if bool_reply(comment):
+    if use_reply(comment):
         balcon(1)
     else:
         pass
-    if bool_rtr(comment):
+    if use_rtr(comment):
         balcon(2)
     else:
         pass
@@ -717,7 +738,7 @@ def create_clip(comment):
     i_clip0 = i_clip0.set_audio(a_clip0)
     c_clip.append(i_clip0)
 
-    if bool_reply(comment):
+    if use_reply(comment):
         a_clip1 = AudioFileClip(a1_path)
         a_clip1 = concatenate_audioclips([a_clip1, LASAGNA])
         for rString in split_rep:
@@ -735,7 +756,7 @@ def create_clip(comment):
         s1 = ''
         pass
 
-    if bool_rtr(comment):
+    if use_rtr(comment):
         a_clip2 = AudioFileClip(a2_path)
         a_clip2 = concatenate_audioclips([a_clip2, LASAGNA])
         for rtrString in split_rtr:
@@ -804,7 +825,7 @@ def create_sub():
     formatted_body = textwrap.wrap(body_nolinks, width=width + 8)
     post_date_by = 'submitted ' + human_time(RedditTitle.created) + ' by '
 
-    formatted_points = str(human_format(RedditTitle.score)).replace('.0', '')
+    formatted_points = str(abbreviate_number(RedditTitle.score)).replace('.0', '')
 
     # Specify all variables
     line_spacing = 28
@@ -954,10 +975,13 @@ def create_sub():
 
 def cleanup():
     """
-    Function:
-    Definition:
-    Parameter:
-    Return:
+    Function:   cleanup()
+    Definition: This function deletes all directions involved in the creation of the video
+                (excluding supplementary directories that house the fonts and icons)
+                The function also recreates the directories, however, they will be empty
+                the function also contains a global variable del_vid which determines whether we delete the video
+    Parameter:  NONE
+    Return:     NONE
     """
     global del_vid
     shutil.rmtree(IMG_DIR)
@@ -1061,8 +1085,8 @@ def create_thumbnail():
                     font=author_font, fill='#818384')
 
     thumb_draw.text((icon_w + indent_spacing + 30, 40), subreddit, font=sub_font)
-    # thumb_draw.text((90, 910), str(human_format(score)), font=score_font, fill='#FF8C60')
-    # thumb_draw.text((500, 900), str(human_format(num_com)) + '  Comments', font=score_font, fill='#818384')
+    # thumb_draw.text((90, 910), str(abbreviate_number(score)), font=score_font, fill='#FF8C60')
+    # thumb_draw.text((500, 900), str(abbreviate_number(num_com)) + '  Comments', font=score_font, fill='#818384')
 
     line_height_thumb = base_height
     # print(str(len(formatted_title) * (size + line_spacing)))
@@ -1095,7 +1119,7 @@ def create_thumbnail():
     for line in formatted_title:
         body_font = ImageFont.truetype('CustFont/American_Captain.ttf', size)
 
-        the_border(indent_spacing, line_height_thumb, thumb_draw, body_font, line, width=3)
+        draw_outlined_text(indent_spacing, line_height_thumb, thumb_draw, body_font, line, width=3)
 
         line_height_thumb = line_height_thumb + line_spacing
 
@@ -1108,10 +1132,10 @@ def create_thumbnail():
 
 def data_collection():
     """
-    Function:
-    Definition:
-    Parameter:
-    Return:
+    Function:   data_collection
+    Definition: Appends all function data to a csv file
+    Parameter:  NONE
+    Return:     NONE
     """
     csv_row = [str(charSum), str(final.duration), str(number_comments), str(threshold), str(datetime.datetime.now()),
                str(reddit_link)]
@@ -1177,11 +1201,11 @@ def estimate_time():
     for x in str_comment_list[:number_comments]:
         gh = str_comment_list.index(x)
         charSum = charSum + len(x)
-        if bool_reply(x):
+        if use_reply(x):
             charSum = charSum + len(reply_list[gh].string)
         else:
             pass
-        if bool_rtr(x):
+        if use_rtr(x):
             charSum = charSum + len(rtr_list[gh].string)
         else:
             pass
@@ -1212,13 +1236,13 @@ def video_creation(thing):
         print(sp0)
         time.sleep(.3)
         print("waiting for comment:" + str(index))
-    if bool_reply(thing):
+    if use_reply(thing):
         while not os.path.isfile(sp1):
             time.sleep(.3)
             print("waiting for reply:" + str(index))
     else:
         pass
-    if bool_rtr(thing):
+    if use_rtr(thing):
         while not os.path.isfile(sp2):
             time.sleep(.3)
             print("waiting for comment:" + str(index))
@@ -1230,10 +1254,10 @@ def video_creation(thing):
 
 def metadata():
     """
-    Function:
-    Definition:
-    Parameter:
-    Return:
+    Function:   metadata
+    Definition: generates video metadata and writes it to a file
+    Parameter:  NONE
+    Return:     NONE
     """
     str_tag = (
         'reddit, best of ask reddit, reddit, ask reddit top posts, r/story, r/ askreddit, r/askreddit, story time, '
@@ -1276,22 +1300,14 @@ def metadata():
         desc.write(data['description'])
 
 
-def balcon_it(text, filename):
-    txt_path = f'{TXT_DIR}{filename}.txt'
-
-    with open(txt_path) as txt_file:
-        txt_file.write(text)
-
-    os.chdir(BALCON_DIR)  # changes command line directory for the balcon utility
-    txt_file = f'{filename}.txt'
-    wav_file = f'{filename}.wav'
-    balcom = f'balcon -f "Subs\\Sub1\\Txt\\{txt_file}" -w "Subs\\Sub1\\Wav\\{wav_file}" -n "ScanSoft Daniel_Full_22kHz"'
-    os.system(balcom)
-    while not os.path.isfile(WAV_DIR + 'title.wav'):
-        time.sleep(.12)
-
-
 def upload_video():
+    """
+    ** WORK IN PROGRESS **
+    Function:   upload video
+    Definition: The program create a command to run the upload to youtube command line utility
+    Parameter:  NONE
+    Return:     NONE
+    """
     shutil.copy2(video_path, UPLOAD_DIR)
     shutil.copy2(VID_DIR + 'thumb.png', UPLOAD_DIR)
     command = []
@@ -1306,8 +1322,14 @@ def upload_video():
 
 
 def insensitive_replace_list(find_list, replace_list, end_of_stmt=['.', '?', '!', ',', ' ', '\n', '</?']):
+    """
+    Function:   insensitive_replace_list
+    Definition:
+    Parameter:
+    Return:
+    """
     for n, i in enumerate(find_list):
-        find_list[n] = cc(i)
+        find_list[n] = permutate_word(i)
     for n, i in enumerate(replace_list):
         replace_list[n] = [str(i) for j in find_list[n]]
 
@@ -1366,9 +1388,10 @@ all_rep_with.extend(swear_2)
 del_vid = True
 cleanup()
 
-# Creates all information for the program
+
 create_thumbnail()
-fill_all()
+# Pulls data for the program from Reddit at once
+populate_lists()
 
 # This block is used for getting the video length within a certain range
 estimate_time()
@@ -1453,7 +1476,7 @@ final.write_videofile(video_path, fps=VID_FPS, threads=16, preset='ultrafast')
 metadata()
 # upload_video()
 
-# Collects data to help the program run better
+# Collects data to help improve the program's predictions
 data_collection()
 print('\n')
 cleanup()
