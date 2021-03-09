@@ -106,6 +106,10 @@ Because the program is built to be used by youtubers, the program also generates
 ![image](https://user-images.githubusercontent.com/52978102/110023751-2388d800-7cf3-11eb-9e83-b25024151b13.png)
 
 The program as present relies on a windows-only command line utility called Balcon meaning there is no Linux support planned.
-# Beta 
-Currently, I am working on a system that runs in an infinite loop that uploads video at set intervals throughout the day with no user input, a fully automated YouTube Channel.
-
+# Planned Features
+Beta version 
+*support for multiple submissions
+*direct upload to youtube
+*commandd line arguments
+Red-To-You 1.0 - rich GUI
+Red-To-You 2.0 - fully automated video upload
