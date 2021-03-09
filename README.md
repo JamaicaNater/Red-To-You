@@ -113,7 +113,7 @@ Beta version
 
 * direct upload to youtube
 
-* commandd line arguments
+* command line arguments
 
 Full version
 
