@@ -17,6 +17,7 @@ from sklearn import linear_model  # need pip
 from mp3_tagger import MP3File, VERSION_1, VERSION_2, VERSION_BOTH
 import itertools
 
+# User Input
 mode = int(input('Mode; 0 = Redesign, 1 = Classic '))
 speed = int(input('\nSpeed; 0 = Multithreaded, 1 = Normal '))
 reddit_link = input('\nLink; Paste your desired reddit post:\n')
@@ -24,6 +25,7 @@ desired_vid_len = int(input('\nTime; Enter your maximum desired video length (se
 bgrd_choice = int(input('\nColor; Type your background color option [0 = Transparent, 1 = Default, 2 = Black]: '))
 cust_title = input('\nTitle; Type a custom title for thumbnails, to  use default type 0\n')
 
+# Reddit Setup
 reddit = praw.Reddit(client_id='BHUtkEY0x4vomA', client_secret='MZvTVUs83p8wEN_Z8EU8bIUjGTY',
                      user_agent='pulling posts')
 submission = reddit.submission(url=reddit_link)
@@ -43,6 +45,12 @@ class RedditTitle:
         author = '[deleted]'
 
     def split_self(self, width):
+        """
+        Function:   split_self
+        Definition: Takes a long string and splits the string into lines of length width
+        Parameter:  width
+        Return:     List
+        """
         split = textwrap.wrap(self.title, width=width)
         return split
 
@@ -117,10 +125,22 @@ class RedditItem(object):
         self.icon = icon_img
 
     def split_self(self, width):
+        """
+        Function:   split_self
+        Definition: Takes a long string and splits the string into lines of length width
+        Parameter:  width
+        Return:     List
+        """
         split = textwrap.wrap(self.string, width=width)
         return split
 
     def get_split_len(self, width):
+        """
+        Function:   get_split_len
+        Definition: returns the length of a string that was split
+        Parameter:  width
+        Return:     Integer
+        """
         split_len = textwrap.wrap(self.string, width=width)
         return len(split_len)
 
@@ -220,7 +240,7 @@ LASAGNA = AudioFileClip('Static/lasagna.wav').set_duration(.33)
 def permutate_word(s):
     """
     Function:   permutate_word
-    Definition: this function accepts a word and returns a list of all possible capitalisations for a given word
+    Definition: this function accepts a word and returns a list of all possible capitalizations for a given word
     Parameter:  a string
     Return:     a list of strings
     """
@@ -229,7 +249,13 @@ def permutate_word(s):
 
 
 def draw_outlined_text(x, y, draw, font, text, width=1, outline='black', fill='white'):
-
+    """
+    Function:   draw_outlined_text
+    Definition: This function draws text on screen by superimposing 4 lawyers of the text at an outline distance apart
+                then the function draws the fill text.
+    Parameter:  x, y, draw (PIL method corresponding to a given image), text, width, outline
+    Return:     NONE
+    """
     draw.text((x - width, y - width), text, font=font, fill=outline)
     draw.text((x + width, y - width), text, font=font, fill=outline)
     draw.text((x - width, y + width), text, font=font, fill=outline)
@@ -360,7 +386,7 @@ def use_reply(comment):
 
 def use_rtr(comment):
     """
-    Function:
+    Function:   use_rtr
     Definition: This function determines whether or not we will use a reply in our program.
                 First, we check if we even used a reply, then we check if a rtr was flagged with DNE upon
                 initialisation; we also check to see if the comment meets the minimum score criteria.
@@ -379,10 +405,11 @@ def use_rtr(comment):
 
 def populate_lists():
     """
-    Function: populate_lists
-    Definition:
-    Parameter: NONE
-    Return: NONE
+    Function:   populate_lists
+    Definition: This function pulls all the relevant data from Reddit and loads it into memory.
+                The function also formats the text.
+    Parameter:  NONE
+    Return:     NONE
     """
     for i in range(number_comments):  # gets all all comments saves them to a string
         # Creates the comments if they exist
@@ -488,10 +515,10 @@ def populate_lists():
 
 def create_img(comment):
     """
-    Function:
+    Function:   create_img
     Definition:
-    Parameter:
-    Return:
+    Parameter:  RedditItem
+    Return:     NONE
     """
     index = str_comment_list.index(comment)
     num = 0
@@ -562,6 +589,12 @@ def create_img(comment):
 
     # Draws the header for the comment
     def comment_img(fmt_com, auth, scr, tim, gld_icon):
+        """
+        Function:
+        Definition:
+        Parameter:
+        Return:
+        """
         nonlocal line_spacing
         nonlocal line_height
         nonlocal indent
@@ -641,15 +674,15 @@ def create_img(comment):
 
 def create_txt(comment):
     """
-    Function:
-    Definition:
-    Parameter:
-    Return:
+    Function:   create_txt
+    Definition: This function takes our gathered text and saves them to a file so that the text can be read by balcon
+    Parameter:  Reddit Item
+    Return:     NONE
     """
     index = str_comment_list.index(comment)
 
     filename = TXT_DIR + str(index) + '.0.txt'
-    txt_to_save = open(filename, 'w', encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
+    txt_to_save = open(filename, 'w', encoding='utf-8')
     txt_to_save.write(replace_me(comment, aud_rep, aud_rep_with, use_for_audio=True))
     txt_to_save.close()
     if use_reply(comment):
@@ -671,14 +704,21 @@ def create_txt(comment):
 
 def create_wav(comment):
     """
-    Function:
-    Definition:
-    Parameter:
-    Return:
+    Function:   create_wav
+    Definition: This function creates a command for our text to speech ulility then executes the command,
+                this creates a wav file
+    Parameter:  RedditItem
+    Return:     NONE
     """
     index = str_comment_list.index(comment)
 
     def balcon(num):
+        """
+        Function:   balcon
+        Definition: This function given a number, creates a command for our command line utiltily
+        Parameter:  Integer
+        Return:     NONE
+        """
         os.chdir(BALCON_DIR)  # changes command line directory for the balcon utility
         txt_file = str(index) + '.%s.txt' % num
         wav_file = str(index) + '.%s.wav' % num
@@ -802,10 +842,12 @@ def replace_me(string, to_replace, replace_with, use_for_audio=False):
 
 def create_sub():
     """
-    Function:
-    Definition:
-    Parameter:
-    Return:
+    Function:   create_sub
+    Definition: This funtion combines all steps prevoisly done
+                The function creates an image for the submission, converts the body text of the post to audio,
+                then, the program creates a clip from the photo and audio
+    Parameter:  NONE
+    Return:     NONE
     """
     size = 20
     width = 180
@@ -1023,17 +1065,17 @@ def cleanup():
 
 def create_thumbnail():
     """
-    Function:
+    Function:   create_thumbnail
     Definition:
-    Parameter:
-    Return:
+    Parameter:  NONE
+    Return:     NONE
     """
     def color_options():
         """
-        Function:
-        Definition:
-        Parameter:
-        Return:
+        Function:   color_options
+        Definition: Accepts user input for preferred background color
+        Parameter:  NONE
+        Return:     NONE
         """
         global bgrd_choice
 
@@ -1146,17 +1188,18 @@ def data_collection():
 
 def dynamic_music():
     """
-    Function:
-    Definition:
-    Parameter:
-    Return:
+    Function:   dynamic_music
+    Definition: This function reads all mp3 files in the dynamic music directory and shuffles them.
+                The info on the shuffled list is also saved for the description.
+                The lower bound for the lengths of the concatenated songs will be the estimated time * 1.1.
+    Parameter:  NONE
+    Return:     NONE
     """
     global song_sound
     global sound_desc
     song_sound = []
     song_info = []
     temp = os.path.dirname(os.path.abspath('Static/DynamicMusic/DynamicMusic.txt')) + '\\*.mp3'
-    # print(temp)
     dynam_dir = glob.glob(temp)
     shuffle(dynam_dir)
     dur_counter = 0
@@ -1172,7 +1215,7 @@ def dynamic_music():
 
         info = '\nSong: ' + title + \
                '\nArtist:  ' + artist + \
-               '\nTimestap: ' + minute_format(dur_counter - song_sound[index].duration, 0) + \
+               '\nTimestamp: ' + minute_format(dur_counter - song_sound[index].duration, 0) + \
                '\n'
         song_info.append(info)
 
@@ -1190,10 +1233,11 @@ reg.fit(df[['char_len', 'num_com', 'threshold']], df.duration)
 
 def estimate_time():
     """
-    Function:
-    Definition:
-    Parameter:
-    Return:
+    Function:   estimate_time
+    Definition: Adds up the total number of characters in the entirity of the video and comes up with a time
+                estimate in seconds.
+    Parameter:  NONE
+    Return:     NONE
     """
     global estimated_time
     global charSum
@@ -1214,18 +1258,19 @@ def estimate_time():
     estimated_time = round(estimated_time, 5)
 
 
-def video_creation(thing):
+def video_creation(comment):
     """
-    Function:
-    Definition:
-    Parameter:
-    Return:
+    Function:   video_creation
+    Definition: Thus appends clips to the clip array, the function also makes sure the files neccesaary have 
+                already been created
+    Parameter:  RedditItem
+    Return:     NONE
     """
-    index = str_comment_list.index(thing)
-    create_txt(thing)
-    create_wav(thing)
-    create_img(thing)
-    # createAudioClip(thing)
+    index = str_comment_list.index(comment)
+    create_txt(comment)
+    create_wav(comment)
+    create_img(comment)
+    # createAudioClip(comment)
     sp0 = WAV_DIR + str(index) + '.0.wav'
     sp1 = WAV_DIR + str(index) + '.1.wav'
     sp2 = WAV_DIR + str(index) + '.2.wav'
@@ -1236,20 +1281,20 @@ def video_creation(thing):
         print(sp0)
         time.sleep(.3)
         print("waiting for comment:" + str(index))
-    if use_reply(thing):
+    if use_reply(comment):
         while not os.path.isfile(sp1):
             time.sleep(.3)
             print("waiting for reply:" + str(index))
     else:
         pass
-    if use_rtr(thing):
+    if use_rtr(comment):
         while not os.path.isfile(sp2):
             time.sleep(.3)
             print("waiting for comment:" + str(index))
     else:
         pass
     # time.sleep(3)
-    main_clips.append(create_clip(thing))
+    main_clips.append(create_clip(comment))
 
 
 def metadata():
