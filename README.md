@@ -107,15 +107,15 @@ Because the program is built to be used by youtubers, the program also generates
 
 The program as present relies on a windows-only command line utility called Balcon meaning there is no Linux support planned.
 # Planned Features
-#Beta version 
+Beta version 
 
-*support for multiple submissions
+* support for multiple submissions
 
-*direct upload to youtube
+* direct upload to youtube
 
-*commandd line arguments
+* commandd line arguments
 
-#Full version
+Full version
 Red-To-You 1.0 - rich GUI
 
 Red-To-You 2.0 - fully automated video upload
