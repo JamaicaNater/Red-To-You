@@ -106,7 +106,7 @@ Because the program is built to be used by youtubers, the program also generates
 ![image](https://user-images.githubusercontent.com/52978102/110023751-2388d800-7cf3-11eb-9e83-b25024151b13.png)
 
 The program as present relies on a windows-only command line utility called Balcon meaning there is no Linux support planned.
-# Planned Features
+# Roadmap
 Beta version 
 
 * support for multiple submissions
@@ -115,8 +115,14 @@ Beta version
 
 * command line arguments
 
+* Combine RedditItem and RedditTitle User Class
+
+* Create settup file which automatically installs required libraries
+
 Full version
 
 Red-To-You 1.0 - rich GUI
 
 Red-To-You 2.0 - fully automated video upload
+
+* The user will be able to setup the prgram to pull top posts from reddit and have the upload to youtube at set intervals throughout the day.
