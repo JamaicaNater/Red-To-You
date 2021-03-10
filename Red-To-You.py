@@ -38,18 +38,19 @@ reddit = praw.Reddit(client_id='BHUtkEY0x4vomA', client_secret='MZvTVUs83p8wEN_Z
 submission = reddit.submission(url=reddit_link)
 
 
-class RedditTitle:
-    title = submission.title
-    body = submission.selftext
-    author = submission.author
-    subreddit = submission.subreddit
-    score = submission.score
-    created = datetime.datetime.fromtimestamp(submission.created)
-    num_com = submission.num_comments
-    try:
-        author = submission.author.name
-    except AttributeError:
-        author = '[deleted]'
+class ParentPost(object):
+    def __init__(self, sub):
+        self.title = sub.title
+        self.body = sub.selftext
+        self.author = sub.author
+        self.subreddit = sub.subreddit
+        self.score = sub.score
+        self.created = datetime.datetime.fromtimestamp(sub.created)
+        self.num_com = sub.num_comments
+        try:
+            self.author = sub.author.name
+        except AttributeError:
+            self.author = '[deleted]'
 
     def split_self(self, width):
         """
@@ -60,6 +61,9 @@ class RedditTitle:
         """
         split = textwrap.wrap(self.title, width=width)
         return split
+
+
+reddit_post = ParentPost(submission)
 
 
 class RedditItem(object):
@@ -212,7 +216,7 @@ if mode == 0:
     TITLE_HEX = '#d7dadc'
     BIG_SCORE_HEX = '#818384'
 
-    TITLE_FOOTER = str(RedditTitle.num_com) + ' Comments   Give Award   Share'
+    TITLE_FOOTER = str(reddit_post.num_com) + ' Comments   Give Award   Share'
     PARENT_FOOTER = 'Reply   Give Award  Share   Report   Save'
     CHILD_FOOTER = PARENT_FOOTER
     IMG_COLOR = '#1a1a1b'
@@ -237,7 +241,7 @@ else:
     BIG_SCORE_HEX = '#646464'
     IMG_COLOR = '#222222'
 
-    TITLE_FOOTER = str(RedditTitle.num_com) + ' comments  source  share  save  hide  give award  report  crosspost  ' \
+    TITLE_FOOTER = str(reddit_post.num_com) + ' comments  source  share  save  hide  give award  report  crosspost  ' \
                                               ' hide all child comments'
     PARENT_FOOTER = 'permalink  source  embed  save  save-RES  report  give award  reply  hide child comments'
     CHILD_FOOTER = 'permalink  source  embed  save  save-RES  parent  report  give award  reply  hide child comments'
@@ -255,7 +259,6 @@ def permutate_word(s):
     Parameter:  a string
     Return:     a list of strings
     """
-
     return list(''.join(t) for t in itertools.product(*zip(s.lower(), s.upper())))
 
 
@@ -343,7 +346,7 @@ def minute_format(num, round_to=2):
 def abbreviate_number(num, use_at=1000):
     """
     Function:   abbreviate_number
-    Definition: This function takes a given number as shortens it.
+    Definition: This function takes a given number and shortens it.
                 eg. 1000000 becomes 1M, and 1000 becomes 1k
     Parameter:  num
     Return:     an abbreviated string of the original number
@@ -846,7 +849,7 @@ def replace_me(string, to_replace, replace_with, use_for_audio=False):
     for item1, item2 in zip(to_replace, replace_with):
         string = string.replace(item1, item2)
     if use_for_audio:
-        if RedditTitle.subreddit == 'relationships' or 'relationship_advice':
+        if reddit_post.subreddit == 'relationships' or 'relationship_advice':
             # string = re.sub(r'[\(\[]?[0-9]+[FfMm][\)\]]? ', r'\0', string)
             pass
 
@@ -864,8 +867,8 @@ def create_sub():
     """
     size = 20
     width = 180
-    subreddit = str(RedditTitle.subreddit)
-    body_nolinks = re.sub(r"\[(.+)\]\(.+\)", r"\1", RedditTitle.body)
+    subreddit = str(reddit_post.subreddit)
+    body_nolinks = re.sub(r"\[(.+)\]\(.+\)", r"\1", reddit_post.body)
     body_nolinks = re.sub(r'https?:\/\/.*[\r\n]*', '', body_nolinks)
     body_nolinks = replace_me(body_nolinks, all_rep, all_rep_with)
 
@@ -876,11 +879,11 @@ def create_sub():
     sub_font = ImageFont.truetype(SUB_FONT_DIR, size - 6)
     footer_font = ImageFont.truetype(FOOTER_FONT_DIR, size - 6)
 
-    formatted_title = textwrap.wrap(RedditTitle.title, width=width)
+    formatted_title = textwrap.wrap(reddit_post.title, width=width)
     formatted_body = textwrap.wrap(body_nolinks, width=width + 8)
-    post_date_by = 'submitted ' + human_time(RedditTitle.created) + ' by '
+    post_date_by = 'submitted ' + human_time(reddit_post.created) + ' by '
 
-    formatted_points = str(abbreviate_number(RedditTitle.score)).replace('.0', '')
+    formatted_points = str(abbreviate_number(reddit_post.score)).replace('.0', '')
 
     # Specify all variables
     line_spacing = 28
@@ -914,7 +917,7 @@ def create_sub():
         sub_draw.text((indent_spacing, line_height), line, font=title_font, fill=TITLE_HEX)
         if line == formatted_title[-1]:
             the_sizex, the_sizey = title_font.getsize(formatted_title[-1])
-            sub_draw.text((indent_spacing + the_sizex + 5, line_height + 5), f'(self.{str(RedditTitle.subreddit)})',
+            sub_draw.text((indent_spacing + the_sizex + 5, line_height + 5), f'(self.{str(reddit_post.subreddit)})',
                           font=sub_font, fill='#888888')
         line_height = line_height + line_spacing
     del line
@@ -923,15 +926,14 @@ def create_sub():
     line_height += small_space
     sub_draw.text((indent_spacing, line_height), post_date_by, font=author_font, fill=TIME_HEX)
     rrx, rry = author_font.getsize(post_date_by)
-    sub_draw.text((indent_spacing + rrx, line_height), ' ' + str(RedditTitle.author), font=author_font, fill=AUTHOR_HEX)
+    sub_draw.text((indent_spacing + rrx, line_height), ' ' + str(reddit_post.author), font=author_font, fill=AUTHOR_HEX)
     line_height += small_space
 
     temp = BACKGROUND.copy()
 
     filename = TXT_DIR + 'title.txt'
     with open(filename, 'w', encoding='utf-8') as title_txt:  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
-        title_txt.write(replace_me(RedditTitle.title, aud_rep, aud_rep_with, use_for_audio=True))
-    print(subreddit)
+        title_txt.write(replace_me(reddit_post.title, aud_rep, aud_rep_with, use_for_audio=True))
 
     formatted_sub = subreddit.replace('_', ' ').replace('AmItheAsshole', 'Am I The Asshole')
     formatted_sub = re.sub(r"(\w)([A-Z])", r"\1 \2", formatted_sub)
@@ -960,7 +962,7 @@ def create_sub():
     title_aclip = AudioFileClip(WAV_DIR + 'title.wav')
     title_aclip = concatenate_audioclips([sub_aclip, LASAGNA, title_aclip, LASAGNA])
 
-    if RedditTitle.body != '':
+    if reddit_post.body != '':
         # Draws a rectangle at line spacing + large space
         # large_space - small_space is used to negate the previous addition to line height
         len_body = len(formatted_body)
@@ -1107,12 +1109,12 @@ def create_thumbnail():
     # dif = datetime.datetime.utcnow() - date
     # print(dif)
 
-    sub_time = RedditTitle.created
-    subreddit = 'r/' + str(RedditTitle.subreddit)
-    author = 'u/' + str(RedditTitle.author)
-    score = int(RedditTitle.score)
-    num_com = int(RedditTitle.num_com)
-    title = RedditTitle.title.replace('/', ' ').replace('[', '').replace(']', '')
+    sub_time = reddit_post.created
+    subreddit = 'r/' + str(reddit_post.subreddit)
+    author = 'u/' + str(reddit_post.author)
+    score = int(reddit_post.score)
+    num_com = int(reddit_post.num_com)
+    title = reddit_post.title.replace('/', ' ').replace('[', '').replace(']', '')
     if cust_title != '0':
         title = cust_title
     thumbnail = Image.new('RGBA', (1920, 1080), color_options())  # from #222222
@@ -1308,8 +1310,8 @@ def metadata():
         'reddit watchers, best posts & comments, reddit, askreddit, USER'
     )
     data = {
-        'title': RedditTitle.title + ' (r/AskReddit)',
-        'description': f'r/{str(RedditTitle.subreddit)} Videos! Welcome back to a brand new USER video!'
+        'title': reddit_post.title + ' (r/AskReddit)',
+        'description': f'r/{str(reddit_post.subreddit)} Videos! Welcome back to a brand new USER video!'
                        '\n\n Dont forget to like and subscribe'
                        '\n'
                        '\n I love to upload New daily videos to keep yall entertained'
@@ -1318,7 +1320,7 @@ def metadata():
                        f'\n{sound_desc}\n'
                        '\nOutro Template made by Grabster - Youtube.com/GrabsterTV'
                        '\n'
-                       f'\nSubreddits used: r/{str(RedditTitle.subreddit)}'
+                       f'\nSubreddits used: r/{str(reddit_post.subreddit)}'
                        '\n'
                        '\n#reddit #askreddit #askredditscary'
                        '\n'
@@ -1393,7 +1395,7 @@ def get_sum_chars():
     Parameter:  NONE
     Return:     Integer
     """
-    char_sum = len(str(RedditTitle.title)) + len(RedditTitle.body)
+    char_sum = len(str(reddit_post.title)) + len(reddit_post.body)
     for x in str_comment_list[:number_comments]:
         gh = str_comment_list.index(x)
         char_sum = char_sum + len(x)
@@ -1482,9 +1484,10 @@ while estimate_time(get_sum_chars()) > desired_vid_len:
 
 estimated_time = estimate_time(get_sum_chars())
 
-print(f'\nEstimated Video Length is: {minute_format(estimated_time)} or {str(estimated_time)}s')
+print(f'Estimated Video Length is: {minute_format(estimated_time)} or {str(estimated_time)}s')
 print(f'Number of Comments: {number_comments}')
 print(f'Threshold: {threshold}')
+print(f'Subreddit: {reddit_post.subreddit}')
 
 dynamic_music()
 
