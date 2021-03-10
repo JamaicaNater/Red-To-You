@@ -12,10 +12,17 @@ import threading
 import timeit
 import json
 import csv
-import pandas as pd  # need pip
-from sklearn import linear_model  # need pip
+import pandas as pd
+from sklearn import linear_model
 from mp3_tagger import MP3File, VERSION_1, VERSION_2, VERSION_BOTH
 import itertools
+
+"""
+Word                    Definition
+rtr                     Reply to a reply
+threshold               Factor of the minimum score criteria of a comment eg. by default, if a comment 
+                        fails to receive 30% of the score of its parent, the comment is not included
+"""
 
 # User Input
 mode = int(input('Mode; 0 = Redesign, 1 = Classic '))
@@ -41,7 +48,7 @@ class RedditTitle:
     num_com = submission.num_comments
     try:
         author = submission.author.name
-    except:
+    except AttributeError:
         author = '[deleted]'
 
     def split_self(self, width):
@@ -66,12 +73,13 @@ class RedditItem(object):
     SILVER = SILVER.resize((gild_w, gild_h), Image.ANTIALIAS)
     icon_img_font = ImageFont.truetype('CustFont/verdanab.ttf', 17)
 
-    def __init__(self, string, author, score, time_ago, gildings):
+    def __init__(self, string, author, score, time_ago, gildings, include=True):
         self.string = string
         self.author = author
         self.score = score
         self.time_ago = time_ago
         self.gildings = gildings
+        self.include = include
 
         if 'gid_1' in self.gildings:
             num_silver = self.gildings['gid_1']
@@ -95,6 +103,9 @@ class RedditItem(object):
         current_width = 0
 
         more_space = 0
+
+        # Draws the awards given to a specific comment
+        # if a given comment has more than one type of award, then we draw a count next to the award
         if num_silver >= 1:
             icon_img.paste(self.SILVER, (current_width, 0), self.SILVER)
             current_width += self.gild_w
@@ -127,7 +138,7 @@ class RedditItem(object):
     def split_self(self, width):
         """
         Function:   split_self
-        Definition: Takes a long string and splits the string into lines of length width
+        Definition: Takes the string of the comment and splits the string into lines of length: width
         Parameter:  width
         Return:     List
         """
@@ -137,7 +148,7 @@ class RedditItem(object):
     def get_split_len(self, width):
         """
         Function:   get_split_len
-        Definition: returns the length of a string that was split
+        Definition: returns the length of a string that was split with width: width
         Parameter:  width
         Return:     Integer
         """
@@ -227,7 +238,7 @@ else:
     IMG_COLOR = '#222222'
 
     TITLE_FOOTER = str(RedditTitle.num_com) + ' comments  source  share  save  hide  give award  report  crosspost  ' \
-                                            'hide all child comments'
+                                              ' hide all child comments'
     PARENT_FOOTER = 'permalink  source  embed  save  save-RES  report  give award  reply  hide child comments'
     CHILD_FOOTER = 'permalink  source  embed  save  save-RES  parent  report  give award  reply  hide child comments'
 
@@ -322,7 +333,7 @@ def minute_format(num, round_to=2):
     minutes = int(abs(num) / 60)
     seconds = round(abs(num) % 60, round_to)
 
-    if num < 0:         # in the case that the number is negative
+    if num < 0:         # in the case that the number is negative, write a negative sign
         minutes = '-' + str(minutes)
     if seconds < 10:
         seconds = '0' + str(seconds)
@@ -425,7 +436,7 @@ def populate_lists():
         if temp_com != DNE:
             try:
                 temp_name = submission.comments[i].author.name  # and indexes them starting at 0
-            except:
+            except AttributeError:
                 temp_name = '[deleted]'
 
             temp_score = submission.comments[i].score
@@ -459,7 +470,7 @@ def populate_lists():
         if temp_com != DNE:
             try:
                 temp_name = submission.comments[i].replies[0].author.name  # and indexes them starting at 0
-            except:
+            except AttributeError:
                 temp_name = '[deleted]'
             temp_score = submission.comments[i].replies[0].score
             temp_time = human_time(datetime.datetime.fromtimestamp(submission.comments[i].replies[0].created))
@@ -492,7 +503,7 @@ def populate_lists():
         if temp_com != DNE:
             try:
                 temp_name = submission.comments[i].replies[0].replies[0].author.name
-            except:
+            except AttributeError:
                 temp_name = '[deleted]'
             temp_score = submission.comments[i].replies[0].replies[0].score
             temp_time = human_time(
@@ -739,10 +750,12 @@ def create_wav(comment):
 
 def create_clip(comment):
     """
-    Function:
-    Definition:
-    Parameter:
-    Return:
+    Function:   create_clip
+    Definition: The function, given a comment, will create a clip for a given
+                The function gathers together the various files needed for video creation such as the image and
+                the audio file
+    Parameter:  RedditItem
+    Return:     VideoClip (moviepy defined class)
     """
     index = str_comment_list.index(comment)
 
@@ -822,13 +835,13 @@ def create_clip(comment):
 
 def replace_me(string, to_replace, replace_with, use_for_audio=False):
     """
-    Function:
-    Definition:
-    Parameter:
-    Return:
+    Function:   replace_me
+    Definition: The function, given a string, will find and replace the words in the passed argument list
+    Parameter:  String, List(Strings), List(Strings), Boolean
+    Return:     String
     """
     if len(to_replace) != len(replace_with):
-        print("Error in replace_me")
+        print("Error in replace_me: Replacement list Desyncronized")
         sys.exit()
     for item1, item2 in zip(to_replace, replace_with):
         string = string.replace(item1, item2)
@@ -843,7 +856,7 @@ def replace_me(string, to_replace, replace_with, use_for_audio=False):
 def create_sub():
     """
     Function:   create_sub
-    Definition: This funtion combines all steps prevoisly done
+    Definition: This function combines all steps previously done
                 The function creates an image for the submission, converts the body text of the post to audio,
                 then, the program creates a clip from the photo and audio
     Parameter:  NONE
@@ -896,7 +909,7 @@ def create_sub():
     sub_img.paste(SUB_SCORE_ICON, (15, line_height + 2), SUB_SCORE_ICON)
     sub_draw.text((indent, line_height + 26), formatted_points, font=score_font, fill=BIG_SCORE_HEX)
 
-    # Writes each line in the title
+    # Writes each line in the title @
     for line in formatted_title:
         sub_draw.text((indent_spacing, line_height), line, font=title_font, fill=TITLE_HEX)
         if line == formatted_title[-1]:
@@ -992,7 +1005,7 @@ def create_sub():
             temp.save(IMG_DIR + f'body.{index}.png')
 
             factor = len(line)/sum_body
-            print(str(factor))
+            # print(str(factor))
             body_iclips.append(ImageClip(IMG_DIR + f'body.{index}.png').set_duration(factor * body_aclip.duration))
         del line
 
@@ -1066,7 +1079,7 @@ def cleanup():
 def create_thumbnail():
     """
     Function:   create_thumbnail
-    Definition:
+    Definition: This function uses the PIL Library to draw a easily readable thumbnail
     Parameter:  NONE
     Return:     NONE
     """
@@ -1179,7 +1192,7 @@ def data_collection():
     Parameter:  NONE
     Return:     NONE
     """
-    csv_row = [str(charSum), str(final.duration), str(number_comments), str(threshold), str(datetime.datetime.now()),
+    csv_row = [str(get_sum_chars()), str(final.duration), str(number_comments), str(threshold), str(datetime.datetime.now()),
                str(reddit_link)]
     with open('program_data.csv', 'a', newline='') as f:
         writer = csv.writer(f)
@@ -1231,37 +1244,22 @@ reg = linear_model.LinearRegression()
 reg.fit(df[['char_len', 'num_com', 'threshold']], df.duration)
 
 
-def estimate_time():
+def estimate_time(char_sum):
     """
     Function:   estimate_time
     Definition: Adds up the total number of characters in the entirity of the video and comes up with a time
                 estimate in seconds.
-    Parameter:  NONE
-    Return:     NONE
+    Parameter:  Integer
+    Return:     Double
     """
-    global estimated_time
-    global charSum
-    charSum = len(str(RedditTitle.title)) + len(RedditTitle.body)
-    for x in str_comment_list[:number_comments]:
-        gh = str_comment_list.index(x)
-        charSum = charSum + len(x)
-        if use_reply(x):
-            charSum = charSum + len(reply_list[gh].string)
-        else:
-            pass
-        if use_rtr(x):
-            charSum = charSum + len(rtr_list[gh].string)
-        else:
-            pass
-
-    estimated_time = reg.predict([[charSum, number_comments, threshold]])[0]
-    estimated_time = round(estimated_time, 5)
+    x = round(reg.predict([[char_sum, number_comments, threshold]])[0], 5)
+    return x
 
 
 def video_creation(comment):
     """
     Function:   video_creation
-    Definition: Thus appends clips to the clip array, the function also makes sure the files neccesaary have 
+    Definition: Thus appends clips to the clip array, the function also makes sure the files neccesary have
                 already been created
     Parameter:  RedditItem
     Return:     NONE
@@ -1387,6 +1385,29 @@ def insensitive_replace_list(find_list, replace_list, end_of_stmt=['.', '?', '!'
     return find_list, replace_list
 
 
+def get_sum_chars():
+    """
+    Function:   get_sum_chars
+    Definition: This function uses the currently set number of comments and threshold (indirectly) to determine the
+                sum of the charaters that we plan to use.
+    Parameter:  NONE
+    Return:     Integer
+    """
+    char_sum = len(str(RedditTitle.title)) + len(RedditTitle.body)
+    for x in str_comment_list[:number_comments]:
+        gh = str_comment_list.index(x)
+        char_sum = char_sum + len(x)
+        if use_reply(x):
+            char_sum = char_sum + len(reply_list[gh].string)
+        else:
+            pass
+        if use_rtr(x):
+            char_sum = char_sum + len(rtr_list[gh].string)
+        else:
+            pass
+    return char_sum
+
+
 # Initialize useful lists
 main_clips = []
 comment_list = []
@@ -1439,29 +1460,27 @@ create_thumbnail()
 populate_lists()
 
 # This block is used for getting the video length within a certain range
-estimate_time()
+estimated_time = estimate_time(get_sum_chars())
 print(f'\nMaximum Video Length is: {minute_format(estimated_time)} or {str(estimated_time)}s')
 
 if desired_vid_len > estimated_time:
     desired_vid_len = estimated_time
     print(f'\nInput exceeds maximum time of {estimated_time}s for this reddit post, setting time to {estimated_time}')
 
-while estimated_time > desired_vid_len:
+while estimate_time(get_sum_chars()) > desired_vid_len:
     number_comments -= 1
-    estimate_time()
-    if estimated_time <= desired_vid_len:
+    if estimate_time(get_sum_chars()) <= desired_vid_len:
         break
 
-    for y in range(5):
-        threshold += .08
-        estimate_time()
-        if estimated_time <= desired_vid_len:
-            break
-
-    estimate_time()
-    if estimated_time <= desired_vid_len:
+    threshold += .04
+    if estimate_time(get_sum_chars()) <= desired_vid_len:
         break
-    threshold = .3
+
+    if threshold > .8:
+        threshold = .3      # reset threshold if it gets too high
+
+
+estimated_time = estimate_time(get_sum_chars())
 
 print(f'\nEstimated Video Length is: {minute_format(estimated_time)} or {str(estimated_time)}s')
 print(f'Number of Comments: {number_comments}')
