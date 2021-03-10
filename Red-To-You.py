@@ -22,6 +22,7 @@ Word                    Definition
 rtr                     Reply to a reply
 threshold               Factor of the minimum score criteria of a comment eg. by default, if a comment 
                         fails to receive 30% of the score of its parent, the comment is not included
+balcon                  Text To Speech Command Line Utility
 """
 
 # User Input
