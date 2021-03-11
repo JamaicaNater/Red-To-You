@@ -13,10 +13,13 @@ import timeit
 import json
 import csv
 import pandas as pd
+from praw.models import Submission
 from sklearn import linear_model
 from mp3_tagger import MP3File, VERSION_1, VERSION_2, VERSION_BOTH
 import itertools
+import moviepy
 
+print(moviepy.__version__)
 """
 Word                    Definition
 rtr                     Reply to a reply
@@ -36,109 +39,115 @@ cust_title = input('\nTitle; Type a custom title for thumbnails, to  use default
 # Reddit Setup
 reddit = praw.Reddit(client_id='BHUtkEY0x4vomA', client_secret='MZvTVUs83p8wEN_Z8EU8bIUjGTY',
                      user_agent='pulling posts')
-submission = reddit.submission(url=reddit_link)
+submission: Submission = reddit.submission(url=reddit_link)
+
+ICON_DIR = 'Static/Icons/'
+AUDIO_DIR = 'Static/Audio/'
+CLIPS_DIR = 'Static/Clips'
 
 
-class ParentPost(object):
-    def __init__(self, sub):
-        self.title = sub.title
-        self.body = sub.selftext
-        self.author = sub.author
-        self.subreddit = sub.subreddit
-        self.score = sub.score
-        self.created = datetime.datetime.fromtimestamp(sub.created)
-        self.num_com = sub.num_comments
-        try:
-            self.author = sub.author.name
-        except AttributeError:
-            self.author = '[deleted]'
-
-    def split_self(self, width):
-        """
-        Function:   split_self
-        Definition: Takes a long string and splits the string into lines of length width
-        Parameter:  width
-        Return:     List
-        """
-        split = textwrap.wrap(self.title, width=width)
-        return split
-
-
-reddit_post = ParentPost(submission)
-
-
-class RedditItem(object):
+class RedditItem:
     # Imported with Pillow - Gildings
     gild_w, gild_h = (20, 20)
-    PLATINUM = Image.open('Static/platinum.png')
+    PLATINUM = Image.open(f'{ICON_DIR}platinum.png')
     PLATINUM = PLATINUM.resize((gild_w, gild_h), Image.ANTIALIAS)
-    GOLD = Image.open('Static/gold.png')
+    GOLD = Image.open(f'{ICON_DIR}gold.png')
     GOLD = GOLD.resize((gild_w, gild_h), Image.ANTIALIAS)
-    SILVER = Image.open('Static/silver.png')
+    SILVER = Image.open(f'{ICON_DIR}silver.png')
     SILVER = SILVER.resize((gild_w, gild_h), Image.ANTIALIAS)
     icon_img_font = ImageFont.truetype('CustFont/verdanab.ttf', 17)
 
-    def __init__(self, string, author, score, time_ago, gildings, include=True):
-        self.string = string
-        self.author = author
-        self.score = score
-        self.time_ago = time_ago
-        self.gildings = gildings
-        self.include = include
+    def __init__(self, *args):
 
-        if 'gid_1' in self.gildings:
-            num_silver = self.gildings['gid_1']
+        # def __init__(self, sub : Submission):
+        if isinstance(args[0], Submission):
+            self.title = args[0].title
+            self.body = args[0].selftext
+            self.author = args[0].author
+            self.subreddit = args[0].subreddit
+            self.score = args[0].score
+            self.created = datetime.datetime.fromtimestamp(args[0].created)
+            self.num_com = args[0].num_comments
+            try:
+                self.author = args[0].author.name
+            except AttributeError:
+                self.author = '[deleted]'
+
+        # def __init__(self, body : str, author : str, score : int, time_ago : int, gildings : list, include=True):
+        elif isinstance(args[0], str) and isinstance(args[1], str) and (isinstance(args[2], int) or isinstance(args[3], str)) \
+            and isinstance(args[3], str): # and isinstance(args[4], list):
+            self.body = args[0]
+            self.author = args[1]
+            self.score = args[2]
+            self.time_ago = args[3]
+            self.gildings = args[4]
+            self.include = True
+
+            if len(args) > 5:
+                if args[5] == False:
+                    self.include = False
+
+            if 'gid_1' in self.gildings:
+                num_silver = self.gildings['gid_1']
+            else:
+                num_silver = 0
+            if 'gid_2' in self.gildings:
+                num_gold = self.gildings['gid_2']
+            else:
+                num_gold = 0
+            if 'gid_3' in self.gildings:
+                num_platinum = self.gildings['gid_3']
+            else:
+                num_platinum = 0
+
+            icon_img = Image.new('RGBA', (200, self.gild_h), (0, 0, 0, 0))  # self.gild_h
+            icon_img_draw = ImageDraw.Draw(icon_img)
+            icon_img_height = self.gild_h
+            text_height = -3
+            small_spacing = 3
+            spacing = 9
+            current_width = 0
+
+            more_space = 0
+
+            # Draws the awards given to a specific comment
+            # if a given comment has more than one type of award, then we draw a count next to the award
+            if num_silver >= 1:
+                icon_img.paste(self.SILVER, (current_width, 0), self.SILVER)
+                current_width += self.gild_w
+                more_space = spacing
+            if num_silver >= 2:
+                current_width += small_spacing
+                icon_img_draw.text((current_width, text_height), str(num_silver), font=self.icon_img_font,
+                                   fill='#6a98af')
+                current_width += spacing
+            current_width += more_space
+            more_space = 0
+            if num_gold >= 1:
+                icon_img.paste(self.GOLD, (current_width, 0), self.GOLD)
+                current_width += self.gild_w
+                more_space = spacing
+            if num_gold >= 2:
+                current_width += small_spacing
+                icon_img_draw.text((current_width, text_height), str(num_gold), font=self.icon_img_font, fill='#6a98af')
+                current_width += spacing
+            current_width += more_space
+            if num_platinum >= 1:
+                icon_img.paste(self.PLATINUM, (current_width, 0), self.PLATINUM)
+                current_width += self.gild_w
+            if num_platinum >= 2:
+                current_width += small_spacing
+                icon_img_draw.text((current_width, text_height), str(num_platinum), font=self.icon_img_font,
+                                   fill='#6a98af')
+                current_width += spacing
+
+            self.icon = icon_img
         else:
-            num_silver = 0
-        if 'gid_2' in self.gildings:
-            num_gold = self.gildings['gid_2']
-        else:
-            num_gold = 0
-        if 'gid_3' in self.gildings:
-            num_platinum = self.gildings['gid_3']
-        else:
-            num_platinum = 0
-
-        icon_img = Image.new('RGBA', (200, self.gild_h), (0, 0, 0, 0))  # self.gild_h
-        icon_img_draw = ImageDraw.Draw(icon_img)
-        icon_img_height = self.gild_h
-        text_height = -3
-        small_spacing = 3
-        spacing = 9
-        current_width = 0
-
-        more_space = 0
-
-        # Draws the awards given to a specific comment
-        # if a given comment has more than one type of award, then we draw a count next to the award
-        if num_silver >= 1:
-            icon_img.paste(self.SILVER, (current_width, 0), self.SILVER)
-            current_width += self.gild_w
-            more_space = spacing
-        if num_silver >= 2:
-            current_width += small_spacing
-            icon_img_draw.text((current_width, text_height), str(num_silver), font=self.icon_img_font, fill='#6a98af')
-            current_width += spacing
-        current_width += more_space
-        more_space = 0
-        if num_gold >= 1:
-            icon_img.paste(self.GOLD, (current_width, 0), self.GOLD)
-            current_width += self.gild_w
-            more_space = spacing
-        if num_gold >= 2:
-            current_width += small_spacing
-            icon_img_draw.text((current_width, text_height), str(num_gold), font=self.icon_img_font, fill='#6a98af')
-            current_width += spacing
-        current_width += more_space
-        if num_platinum >= 1:
-            icon_img.paste(self.PLATINUM, (current_width, 0), self.PLATINUM)
-            current_width += self.gild_w
-        if num_platinum >= 2:
-            current_width += small_spacing
-            icon_img_draw.text((current_width, text_height), str(num_platinum), font=self.icon_img_font, fill='#6a98af')
-            current_width += spacing
-
-        self.icon = icon_img
+            print("Error initiailizing RedditItem")
+            for arg in args:
+                print(arg)
+            print(isinstance(args[1], str))
+            sys.exit()
 
     def split_self(self, width):
         """
@@ -147,7 +156,7 @@ class RedditItem(object):
         Parameter:  width
         Return:     List
         """
-        split = textwrap.wrap(self.string, width=width)
+        split = textwrap.wrap(self.body, width=width)
         return split
 
     def get_split_len(self, width):
@@ -157,9 +166,11 @@ class RedditItem(object):
         Parameter:  width
         Return:     Integer
         """
-        split_len = textwrap.wrap(self.string, width=width)
+        split_len = textwrap.wrap(self.body, width=width)
         return len(split_len)
 
+
+reddit_post = RedditItem(submission)
 
 number_comments = 25  # int(input('Type a Number Between 1 and 25 to represent the Number of Comments\n'))
 threshold = .3  # float(input('Type a number between 0 and 1 to represent the reply threshold (.33 recommended) \n'))
@@ -182,15 +193,15 @@ rtrWidth = 161  # Width between replies to replies
 VID_FPS = 15    # Video frames per second
 
 # Imported with Pillow
-BACKGROUND = Image.open('Static/backgroundblack.jpg').convert('RGBA')
+BACKGROUND = Image.open(f'{ICON_DIR}backgroundblack.jpg').convert('RGBA')
 if mode == 0:
-    COMMENT_VOTE_ICON = Image.open('Static/commentupdown_2.png').convert('RGBA')
+    COMMENT_VOTE_ICON = Image.open(f'{ICON_DIR}commentupdown_2.png').convert('RGBA')
 else:
-    COMMENT_VOTE_ICON = Image.open('Static/commentupdown.png').convert('RGBA')
+    COMMENT_VOTE_ICON = Image.open(f'{ICON_DIR}commentupdown.png').convert('RGBA')
 COMMENT_VOTE_ICON = COMMENT_VOTE_ICON.resize((22, 56), Image.ANTIALIAS)
-TITLE_VOTE_ICON = Image.open('Static/titleupdown.png').convert('RGBA')
+TITLE_VOTE_ICON = Image.open(f'{ICON_DIR}titleupdown.png').convert('RGBA')
 COMMENT_VOTE_ICON = COMMENT_VOTE_ICON  # Revisit Later
-SUB_SCORE_ICON = Image.open('Static/sub_up_down.png').convert('RGBA')
+SUB_SCORE_ICON = Image.open(f'{ICON_DIR}sub_up_down.png').convert('RGBA')
 SUB_SCORE_ICON = SUB_SCORE_ICON.resize((28, 73), Image.ANTIALIAS)
 # Imported with Pillow - Thumbnail Items
 ASKREDDIT_ICON = Image.open('Thumbnail/askreddit.png').resize((100, 100), Image.ANTIALIAS)  # move later
@@ -248,9 +259,9 @@ else:
     CHILD_FOOTER = 'permalink  source  embed  save  save-RES  parent  report  give award  reply  hide child comments'
 
 # Imported with moviepy
-TRANSITION = VideoFileClip('Static/NewError.mp4').set_duration(.7).set_fps(VID_FPS)
-OUTRO = VideoFileClip('Static/outro.mp4').set_fps(VID_FPS)
-LASAGNA = AudioFileClip('Static/lasagna.wav').set_duration(.33)
+TRANSITION = VideoFileClip(f'{CLIPS_DIR}/Transition.mp4').set_duration(.7).set_fps(VID_FPS)
+OUTRO = VideoFileClip(f'{CLIPS_DIR}/Outro.mp4').set_fps(VID_FPS)
+SILENCE = AudioFileClip(f'{AUDIO_DIR}Silence.wav').set_duration(.33)
 
 
 def permutate_word(s):
@@ -372,7 +383,7 @@ def use_comment(comment):
     Return:     boolean
     """
     index = str_comment_list.index(comment)
-    if (comment_list[index].string != DNE) and (comment_list[index].score >= MIN_SCORE):
+    if (comment_list[index].body != DNE) and (comment_list[index].score >= MIN_SCORE):
         if index == 0:
             return not submission.comments[0].stickied
         else:
@@ -393,7 +404,7 @@ def use_reply(comment):
     Return:     boolean
     """
     index = str_comment_list.index(comment)
-    if (reply_list[index].string != DNE) and (reply_list[index].score >= threshold * comment_list[index].score):
+    if (reply_list[index].body != DNE) and (reply_list[index].score >= threshold * comment_list[index].score):
         return True
     else:
         return False
@@ -411,7 +422,7 @@ def use_rtr(comment):
     Return:     boolean
     """
     index = str_comment_list.index(comment)
-    if use_reply(comment) and (rtr_list[index].string != DNE) and (
+    if use_reply(comment) and (rtr_list[index].body != DNE) and (
             rtr_list[index].score >= reply_list[index].score * threshold):
         return True
     else:
@@ -453,7 +464,7 @@ def populate_lists():
             temp_gildings = DNE
 
         comment_list.append(RedditItem(temp_com, temp_name, temp_score, temp_time, temp_gildings))
-        str_comment_list.append(comment_list[i].string)
+        str_comment_list.append(comment_list[i].body)
         # print(temp_gildings)
         del temp_com
         del temp_name
@@ -661,13 +672,13 @@ def create_img(comment):
         img.paste(COMMENT_VOTE_ICON, (arrow_indent, line_height), COMMENT_VOTE_ICON)
         img.paste(gld_icon, (gld_x, gld_y), gld_icon)
 
-        for string in fmt_com:
+        for line in fmt_com:
             line_height += line_spacing
-            string_num = fmt_com.index(string)
-            draw.text((indent, line_height), string, font=body_font, fill=BODY_HEX)
-            img_path = IMG_DIR + str(index) + '.' + str(num) + '.' + str(string_num) + '.png'
+            line_num = fmt_com.index(line)
+            draw.text((indent, line_height), line, font=body_font, fill=BODY_HEX)
+            img_path = IMG_DIR + str(index) + '.' + str(num) + '.' + str(line_num) + '.png'
 
-            if string == fmt_com[-1]:
+            if line == fmt_com[-1]:
                 line_height += medium_space
                 draw.text((indent, line_height), fttr, font=footer_font, fill=FOOTER_HEX)
 
@@ -703,7 +714,7 @@ def create_txt(comment):
     if use_reply(comment):
         filename = TXT_DIR + str(index) + '.1.txt'
         txt_to_save = open(filename, 'w', encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
-        txt_to_save.write(replace_me(reply_list[index].string, aud_rep, aud_rep_with, use_for_audio=True))
+        txt_to_save.write(replace_me(reply_list[index].body, aud_rep, aud_rep_with, use_for_audio=True))
         txt_to_save.close()
     else:
         pass
@@ -711,7 +722,7 @@ def create_txt(comment):
     if use_rtr(comment):
         filename = TXT_DIR + str(index) + '.2.txt'
         txt_to_save = open(filename, 'w', encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
-        txt_to_save.write(replace_me(rtr_list[index].string, aud_rep, aud_rep_with, use_for_audio=True))
+        txt_to_save.write(replace_me(rtr_list[index].body, aud_rep, aud_rep_with, use_for_audio=True))
         txt_to_save.close()
     else:
         pass
@@ -777,14 +788,15 @@ def create_clip(comment):
     a1_path = WAV_DIR + str(index) + '.1.wav'
     a2_path = WAV_DIR + str(index) + '.2.wav'
 
-    sum0 = sum(len(zero) for zero in split_com)
-    sum1 = sum(len(one) for one in split_rep)
-    sum2 = sum(len(two) for two in split_rtr)
+    sum_comment_lines = sum(len(line) for line in split_com)
+    sum_reply_lines = sum(len(line) for line in split_rep)
+    sum_rtr_lines = sum(len(line) for line in split_rtr)
 
     a_clip0 = AudioFileClip(a0_path)
-    a_clip0 = concatenate_audioclips([a_clip0, LASAGNA])
+    a_clip0 = concatenate_audioclips([a_clip0, SILENCE])
+
     for string in split_com:
-        factor = len(string) / sum0
+        factor = len(string) / sum_comment_lines
         path = IMG_DIR + str(index) + '.0' + '.%s.png' % split_com.index(string)
         clip = ImageClip(path).set_duration(factor * a_clip0.duration)
         i_clip0.append(clip)
@@ -797,9 +809,9 @@ def create_clip(comment):
 
     if use_reply(comment):
         a_clip1 = AudioFileClip(a1_path)
-        a_clip1 = concatenate_audioclips([a_clip1, LASAGNA])
+        a_clip1 = concatenate_audioclips([a_clip1, SILENCE])
         for rString in split_rep:
-            factor = len(rString) / sum1
+            factor = len(rString) / sum_reply_lines
             path = IMG_DIR + str(index) + '.1' + '.%s.png' % split_rep.index(rString)
             clip = ImageClip(path).set_duration(factor * a_clip1.duration)
             i_clip1.append(clip)
@@ -815,9 +827,9 @@ def create_clip(comment):
 
     if use_rtr(comment):
         a_clip2 = AudioFileClip(a2_path)
-        a_clip2 = concatenate_audioclips([a_clip2, LASAGNA])
+        a_clip2 = concatenate_audioclips([a_clip2, SILENCE])
         for rtrString in split_rtr:
-            factor = len(rtrString) / sum2
+            factor = len(rtrString) / sum_rtr_lines
             path = IMG_DIR + str(index) + '.2' + '.%s.png' % split_rtr.index(rtrString)
             clip = ImageClip(path).set_duration(factor * a_clip2.duration)
             i_clip2.append(clip)
@@ -961,7 +973,7 @@ def create_sub():
 
     sub_aclip = AudioFileClip(WAV_DIR + 'sub_text.wav')
     title_aclip = AudioFileClip(WAV_DIR + 'title.wav')
-    title_aclip = concatenate_audioclips([sub_aclip, LASAGNA, title_aclip, LASAGNA])
+    title_aclip = concatenate_audioclips([sub_aclip, SILENCE, title_aclip, SILENCE])
 
     if reddit_post.body != '':
         # Draws a rectangle at line spacing + large space
@@ -1401,11 +1413,11 @@ def get_sum_chars():
         gh = str_comment_list.index(x)
         char_sum = char_sum + len(x)
         if use_reply(x):
-            char_sum = char_sum + len(reply_list[gh].string)
+            char_sum = char_sum + len(reply_list[gh].body)
         else:
             pass
         if use_rtr(x):
-            char_sum = char_sum + len(rtr_list[gh].string)
+            char_sum = char_sum + len(rtr_list[gh].body)
         else:
             pass
     return char_sum
