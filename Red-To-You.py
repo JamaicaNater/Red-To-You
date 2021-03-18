@@ -19,6 +19,7 @@ from mp3_tagger import MP3File, VERSION_1, VERSION_2, VERSION_BOTH
 import itertools
 import moviepy
 
+print(moviepy.__version__)
 """
 Word                    Definition
 rtr                     Reply to a reply
