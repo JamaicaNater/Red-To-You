@@ -109,11 +109,11 @@ The program as present relies on a windows-only command line utility called Balc
 # Roadmap
 Beta version 
 
-* support for multiple submissions
+* Support for multiple submissions
 
-* direct upload to youtube
+* Direct upload to youtube
 
-* command line arguments
+* Command line arguments
 
 * Combine RedditItem and RedditTitle User Class
 
