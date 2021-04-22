@@ -97,7 +97,7 @@ After navigating to Subs/Vid we see the following:
 The video file is saved as the video’s unique identifier
 
 # Additional Information 
-After the program runs, diagnostic information such as the total number of characters in the program as well as the programs duration are saved into a csv file which we feed into our learning tool, thus the program gets better and predicting video length over time
+After the program runs, diagnostic information such as the total number of characters in the program as well as the programs duration are saved into a csv file which we feed into our learning tool, thus the program gets better and better at predicting video length over time
 
 ![image](https://user-images.githubusercontent.com/52978102/110022300-5cc04880-7cf1-11eb-876f-9c0a61cf76ab.png)
  
