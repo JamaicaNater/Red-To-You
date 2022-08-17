@@ -1,6 +1,8 @@
 import directories
 
-import praw
+from praw.models import Submission
+import datetime
+import textwrap
 from PIL import Image, ImageFont, ImageDraw
 
 

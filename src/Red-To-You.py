@@ -30,7 +30,7 @@ threshold               Factor of the minimum score criteria of a comment eg. by
 balcon                  Text To Speech Command Line Utility
 """
 
-debug = True;
+debug = True
 
 # User Input
 if (debug):
@@ -39,7 +39,7 @@ if (debug):
     reddit_link = "https://www.reddit.com/r/AskReddit/comments/wo4vb8/whats_something_that_people_turn_into_their_whole/"
     desired_vid_len = 99
     bgrd_choice = 0
-    cust_title = 0
+    cust_title = '0'
 else:
     mode = int(input('Mode; 0 = Redesign, 1 = Classic '))
     speed = int(input('\nSpeed; 0 = Multithreaded, 1 = Normal '))
@@ -345,7 +345,7 @@ def populate_lists():
             temp_time = DNE
             temp_gildings = DNE
 
-        comment_list.append(RedditItem(temp_com, temp_name, temp_score, temp_time, temp_gildings))
+        comment_list.append(RedditItem.RedditItem(temp_com, temp_name, temp_score, temp_time, temp_gildings))
         str_comment_list.append(comment_list[i].body)
         # print(temp_gildings)
         del temp_com
@@ -379,7 +379,7 @@ def populate_lists():
             temp_time = DNE
             temp_gildings = DNE
 
-        reply_list.append(RedditItem(temp_com, temp_name, temp_score, temp_time, temp_gildings))
+        reply_list.append(RedditItem.RedditItem(temp_com, temp_name, temp_score, temp_time, temp_gildings))
 
         del temp_com
         del temp_name
@@ -412,7 +412,7 @@ def populate_lists():
             temp_time = DNE
             temp_gildings = DNE
 
-        rtr_list.append(RedditItem(temp_com, temp_name, temp_score, temp_time, temp_gildings))
+        rtr_list.append(RedditItem.RedditItem(temp_com, temp_name, temp_score, temp_time, temp_gildings))
 
         del temp_com
         del temp_name
@@ -1168,7 +1168,7 @@ def video_creation(comment):
     # createAudioClip(comment)
     sp0 = directories.WAV_DIR + str(index) + '.0.wav'
     sp1 = directories.WAV_DIR + str(index) + '.1.wav'
-    sp2 = WAV_DIR + str(index) + '.2.wav'
+    sp2 = directories.WAV_DIR + str(index) + '.2.wav'
     # print(sp0)
     # print(sp1)
     # print(sp2)
