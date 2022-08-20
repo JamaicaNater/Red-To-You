@@ -1,6 +1,8 @@
 import RedditItem
 import directories
 from formatting import ui
+from formatting import text_format
+from formatting import utils
 
 import praw
 from moviepy.editor import *
@@ -20,7 +22,6 @@ import pandas as pd
 from praw.models import Submission
 from sklearn import linear_model
 from mp3_tagger import MP3File, VERSION_1, VERSION_2, VERSION_BOTH
-import itertools
 import moviepy
 
 """
@@ -78,16 +79,6 @@ TRANSITION = VideoFileClip(f'{directories.CLIPS_DIR}/Transition.mp4').set_durati
 OUTRO = VideoFileClip(f'{directories.CLIPS_DIR}/Outro.mp4').set_fps(VID_FPS)
 SILENCE = AudioFileClip(f'{directories.AUDIO_DIR}Silence.wav').set_duration(.33)
 
-def permutate_word(s):
-    """
-    Function:   permutate_word
-    Definition: this function accepts a word and returns a list of all possible capitalizations for a given word
-    Parameter:  a string
-    Return:     a list of strings
-    """
-    return list(''.join(t) for t in itertools.product(*zip(s.lower(), s.upper())))
-
-
 def draw_outlined_text(x, y, draw, font, text, width=1, outline='black', fill='white'):
     """
     Function:   draw_outlined_text
@@ -103,89 +94,6 @@ def draw_outlined_text(x, y, draw, font, text, width=1, outline='black', fill='w
 
     # now draw the text over it
     draw.text((x, y), text, font=font, fill=fill)
-
-
-def human_time(post_datetime):
-    """
-    Function:   human_time
-    Definition: The function accepts a given date time object and calculates the difference between the current point
-                in time and the time given by the parameter.
-                The function then returns a roughly accurate human readable representation of the time difference
-    Parameter:  a datetime object ( time posted )
-    Return:     a string
-    """
-    dif = datetime.datetime.now() - post_datetime + datetime.timedelta(hours=8)
-    seconds = dif.total_seconds()
-    minutes = seconds / 60
-    hours = minutes / 60
-    if int(hours) < 1:
-        return str(int(minutes)) + ' minutes ago'
-    elif int(hours) == 1:
-        return 'an hour ago'
-
-    days = hours / 24
-    if int(days) < 1:
-        return str(int(hours)) + ' hours ago'
-    elif int(days) == 1:
-        return '1 day ago'
-
-    weeks = days / 7
-    if int(weeks) < 1:
-        return str(int(days)) + ' days ago'
-    elif int(weeks) == 1:
-        return 'a week ago'
-
-    months = days / 30
-    if int(months) < 1:
-        return 'over a week ago'
-    elif int(months) == 1:
-        return 'a month ago'
-
-    years = months / 12
-    if int(years) < 1:
-        return str(int(months)) + ' months ago'
-    elif int(years) == 1:
-        return 'a year ago'
-    else:
-        return str(int(years)) + ' years ago'
-
-
-def minute_format(num, round_to=2):
-    """
-    Function:   minute_format
-    Definition: The function receives time in seconds which it the converts to minutes using a simple algorithm.
-                The remainder is then reconverted back in to seconds and rounds to what ever number is needed
-                After, seconds and minutes are formatted according to their value
-    Parameter:  num (seconds), round_to (decimal places to round to)
-    Return:     a string
-    """
-    minutes = int(abs(num) / 60)
-    seconds = round(abs(num) % 60, round_to)
-
-    if num < 0:         # in the case that the number is negative, write a negative sign
-        minutes = '-' + str(minutes)
-    if seconds < 10:
-        seconds = '0' + str(seconds)
-    return str(minutes) + ':' + str(seconds)
-
-
-def abbreviate_number(num, use_at=1000):
-    """
-    Function:   abbreviate_number
-    Definition: This function takes a given number and shortens it.
-                eg. 1000000 becomes 1M, and 1000 becomes 1k
-    Parameter:  num
-    Return:     an abbreviated string of the original number
-    """
-    if num >= use_at:
-        magnitude = 0
-        while abs(num) >= 1000:
-            magnitude += 1
-            num /= 1000.0
-        return '%.1f%s' % (num, ['', 'k', 'M', 'G', 'T', 'P'][magnitude])  # suffixes
-    else:
-        return str(num)
-
 
 def use_comment(comment):
     """
@@ -254,7 +162,7 @@ def populate_lists():
     for i in range(number_comments):  # gets all all comments saves them to a string
         # Creates the comments if they exist
         try:
-            temp_com = replace_me(submission.comments[i].body, all_rep, all_rep_with)
+            temp_com = utils.replace_me(submission.comments[i].body, all_rep, all_rep_with)
             temp_com = re.sub(r"\[(.+)\]\(.+\)", r"\1", temp_com)
         except:
             temp_com = DNE
@@ -269,7 +177,7 @@ def populate_lists():
                 temp_name = '[deleted]'
 
             temp_score = submission.comments[i].score
-            temp_time = human_time(datetime.datetime.fromtimestamp(submission.comments[i].created))
+            temp_time = text_format.human_time(datetime.datetime.fromtimestamp(submission.comments[i].created))
             temp_gildings = submission.comments[i].gildings
         else:
             temp_name = DNE
@@ -290,7 +198,7 @@ def populate_lists():
 
         # Creates the comments if they exist
         try:
-            temp_com = replace_me(submission.comments[i].replies[0].body, all_rep, all_rep_with)
+            temp_com = utils.replace_me(submission.comments[i].replies[0].body, all_rep, all_rep_with)
             temp_com = re.sub(r"\[(.+)\]\(.+\)", r"\1", temp_com)
         except:
             temp_com = DNE
@@ -302,7 +210,7 @@ def populate_lists():
             except AttributeError:
                 temp_name = '[deleted]'
             temp_score = submission.comments[i].replies[0].score
-            temp_time = human_time(datetime.datetime.fromtimestamp(submission.comments[i].replies[0].created))
+            temp_time = text_format.human_time(datetime.datetime.fromtimestamp(submission.comments[i].replies[0].created))
             temp_gildings = submission.comments[i].replies[0].gildings
 
         else:
@@ -323,7 +231,7 @@ def populate_lists():
 
         # Creates the comments if they exist
         try:
-            temp_com = replace_me(submission.comments[i].replies[0].replies[0].body, all_rep, all_rep_with)
+            temp_com = utils.replace_me(submission.comments[i].replies[0].replies[0].body, all_rep, all_rep_with)
             temp_com = re.sub(r"\[(.+)\]\(.+\)", r"\1", temp_com)
         except:
             temp_com = DNE
@@ -335,7 +243,7 @@ def populate_lists():
             except AttributeError:
                 temp_name = '[deleted]'
             temp_score = submission.comments[i].replies[0].replies[0].score
-            temp_time = human_time(
+            temp_time = text_format.human_time(
                 datetime.datetime.fromtimestamp(submission.comments[i].replies[0].replies[0].created))
             temp_gildings = submission.comments[i].replies[0].replies[0].gildings
         else:
@@ -444,7 +352,7 @@ def create_img(comment):
             auth = '[–] ' + auth
 
         formatted_time = f'{tim}'
-        formatted_points = f'  {str(abbreviate_number(scr, 10000))} points  '
+        formatted_points = f'  {str(text_format.abbreviate_number(scr, 10000))} points  '
         prev_indent = indent
         indent += 40
 
@@ -523,12 +431,12 @@ def create_txt(comment):
 
     filename = directories.TXT_DIR + str(index) + '.0.txt'
     txt_to_save = open(filename, 'w', encoding='utf-8')
-    txt_to_save.write(replace_me(comment, aud_rep, aud_rep_with, use_for_audio=True))
+    txt_to_save.write(utils.replace_me(comment, aud_rep, aud_rep_with, use_for_audio=True))
     txt_to_save.close()
     if use_reply(comment):
         filename = directories.TXT_DIR + str(index) + '.1.txt'
         txt_to_save = open(filename, 'w', encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
-        txt_to_save.write(replace_me(reply_list[index].body, aud_rep, aud_rep_with, use_for_audio=True))
+        txt_to_save.write(utils.replace_me(reply_list[index].body, aud_rep, aud_rep_with, use_for_audio=True))
         txt_to_save.close()
     else:
         pass
@@ -536,7 +444,7 @@ def create_txt(comment):
     if use_rtr(comment):
         filename = directories.TXT_DIR + str(index) + '.2.txt'
         txt_to_save = open(filename, 'w', encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
-        txt_to_save.write(replace_me(rtr_list[index].body, aud_rep, aud_rep_with, use_for_audio=True))
+        txt_to_save.write(utils.replace_me(rtr_list[index].body, aud_rep, aud_rep_with, use_for_audio=True))
         txt_to_save.close()
     else:
         pass
@@ -663,26 +571,6 @@ def create_clip(comment):
     return c_clip
 
 
-def replace_me(string, to_replace, replace_with, use_for_audio=False):
-    """
-    Function:   replace_me
-    Definition: The function, given a string, will find and replace the words in the passed argument list
-    Parameter:  String, List(Strings), List(Strings), Boolean
-    Return:     String
-    """
-    if len(to_replace) != len(replace_with):
-        print("Error in replace_me: Replacement list Desyncronized")
-        sys.exit()
-    for item1, item2 in zip(to_replace, replace_with):
-        string = string.replace(item1, item2)
-    if use_for_audio:
-        if reddit_post.subreddit == 'relationships' or 'relationship_advice':
-            # string = re.sub(r'[\(\[]?[0-9]+[FfMm][\)\]]? ', r'\0', string)
-            pass
-
-    return string
-
-
 def create_sub():
     """
     Function:   create_sub
@@ -697,7 +585,7 @@ def create_sub():
     subreddit = str(reddit_post.subreddit)
     body_nolinks = re.sub(r"\[(.+)\]\(.+\)", r"\1", reddit_post.body)
     body_nolinks = re.sub(r'https?:\/\/.*[\r\n]*', '', body_nolinks)
-    body_nolinks = replace_me(body_nolinks, all_rep, all_rep_with)
+    body_nolinks = utils.replace_me(body_nolinks, all_rep, all_rep_with)
 
     author_font = ImageFont.truetype(ui.AUTHOR_FONT_DIR, 15)
     score_font = ImageFont.truetype(ui.SCORE_FONT_DIR, size - 3)
@@ -708,9 +596,9 @@ def create_sub():
 
     formatted_title = textwrap.wrap(reddit_post.title, width=width)
     formatted_body = textwrap.wrap(body_nolinks, width=width + 8)
-    post_date_by = 'submitted ' + human_time(reddit_post.created) + ' by '
+    post_date_by = 'submitted ' + text_format.human_time(reddit_post.created) + ' by '
 
-    formatted_points = str(abbreviate_number(reddit_post.score)).replace('.0', '')
+    formatted_points = str(text_format.abbreviate_number(reddit_post.score)).replace('.0', '')
 
     # Specify all variables
     line_spacing = 28
@@ -760,7 +648,7 @@ def create_sub():
 
     filename = directories.TXT_DIR + 'title.txt'
     with open(filename, 'w', encoding='utf-8') as title_txt:  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
-        title_txt.write(replace_me(reddit_post.title, aud_rep, aud_rep_with, use_for_audio=True))
+        title_txt.write(utils.replace_me(reddit_post.title, aud_rep, aud_rep_with, use_for_audio=True))
 
     formatted_sub = subreddit.replace('_', ' ').replace('AmItheAsshole', 'Am I The Asshole')
     formatted_sub = re.sub(r"(\w)([A-Z])", r"\1 \2", formatted_sub)
@@ -802,7 +690,7 @@ def create_sub():
         filename = directories.TXT_DIR + 'body.txt'
         body_txt_file = open(filename, 'w',
                               encoding='utf-8')  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
-        body_txt_file.write(replace_me(body_nolinks, aud_rep, aud_rep_with, use_for_audio=True))
+        body_txt_file.write(utils.replace_me(body_nolinks, aud_rep, aud_rep_with, use_for_audio=True))
         body_txt_file.close()
 
         os.chdir(BALCON_DIR)  # changes command line directory for the balcon utility
@@ -965,12 +853,12 @@ def create_thumbnail():
     # thumbnail.paste(ui.UPDOWNVOTE, (point_x, point_y), ui.UPDOWNVOTE)
     thumbnail.paste(ui.ASKREDDIT_ICON, (40, 40), ui.ASKREDDIT_ICON)
 
-    thumb_draw.text((icon_w + indent_spacing + 30, 120), f'submitted {human_time(sub_time)} by {author}',
+    thumb_draw.text((icon_w + indent_spacing + 30, 120), f'submitted {text_format.human_time(sub_time)} by {author}',
                     font=author_font, fill='#818384')
 
     thumb_draw.text((icon_w + indent_spacing + 30, 40), subreddit, font=sub_font)
-    # thumb_draw.text((90, 910), str(abbreviate_number(score)), font=score_font, fill='#FF8C60')
-    # thumb_draw.text((500, 900), str(abbreviate_number(num_com)) + '  Comments', font=score_font, fill='#818384')
+    # thumb_draw.text((90, 910), str(text_format.abbreviate_number(score)), font=score_font, fill='#FF8C60')
+    # thumb_draw.text((500, 900), str(text_format.abbreviate_number(num_com)) + '  Comments', font=score_font, fill='#818384')
 
     line_height_thumb = base_height
     # print(str(len(formatted_title) * (size + line_spacing)))
@@ -1057,7 +945,7 @@ def dynamic_music():
 
         info = '\nSong: ' + title + \
                '\nArtist:  ' + artist + \
-               '\nTimestamp: ' + minute_format(dur_counter - song_sound[index].duration, 0) + \
+               '\nTimestamp: ' + text_format.minute_format(dur_counter - song_sound[index].duration, 0) + \
                '\n'
         song_info.append(info)
 
@@ -1193,27 +1081,6 @@ def upload_video():
     print(command)
 
 
-def insensitive_replace_list(find_list, replace_list, end_of_stmt=['.', '?', '!', ',', ' ', '\n', '</?']):
-    """
-    Function:   insensitive_replace_list
-    Definition:
-    Parameter:
-    Return:
-    """
-    for n, i in enumerate(find_list):
-        find_list[n] = permutate_word(i)
-    for n, i in enumerate(replace_list):
-        replace_list[n] = [str(i) for j in find_list[n]]
-
-    find_list = list(itertools.chain(*find_list))
-    replace_list = list(itertools.chain(*replace_list))
-
-    find_list = [k + end_of_stmt[end_of_stmt.index(i)] for k in find_list for i in end_of_stmt]
-    replace_list = [k + end_of_stmt[end_of_stmt.index(i)] for k in replace_list for i in end_of_stmt]
-
-    return find_list, replace_list
-
-
 def get_sum_chars():
     """
     Function:   get_sum_chars
@@ -1250,24 +1117,24 @@ viz_rep, viz_rep_with = [], []
 all_rep, all_rep_with = ['&#x200B'], ['']
 
 # if these values are not changed the tts engine will read the arcronyms, leading to mispronunciations
-aita_1, aita_2 = insensitive_replace_list(
+aita_1, aita_2 = utils.insensitive_replace_list(
     ['aita', 'yta', 'nta', 'esh'],
     ['am i the asshole', 'you\'re the asshole', 'not the asshole', 'everyone sucks here']
 )
 
 # if these values are not changed the tts engine will read the arcronyms, leading to mispronunciations
-sms_1, sms_2 = insensitive_replace_list(
+sms_1, sms_2 = utils.insensitive_replace_list(
     ['lol ', 'lol.', 'jk', 'smh', 'stfu', 'nvm', 'tbh', 'tifu'],
     ['el oh el', 'el oh el.', 'just kidding', 'shake my head', 'shut the fuck up', 'nevermind', 'to be honest', 'today i fucked up']
 )
 
 # These are words that the TTS engine often mispronounces
-common_mispronunciations_1, common_mispronunciations_2 = insensitive_replace_list(
+common_mispronunciations_1, common_mispronunciations_2 = utils.insensitive_replace_list(
     ['coworker', 'facebook'],
     ['co-worker', 'face book']
 )
 # Censors swear words
-swear_1, swear_2 = insensitive_replace_list(
+swear_1, swear_2 = utils.insensitive_replace_list(
     ['fuck', 'shit', 'bitch'],
     ['uck', 'sit', 'itch']
 )
@@ -1290,7 +1157,7 @@ populate_lists()
 
 # This block is used for getting the video length within a certain range
 estimated_time = estimate_time(get_sum_chars())
-print(f'\nMaximum Video Length is: {minute_format(estimated_time)} or {str(estimated_time)}s')
+print(f'\nMaximum Video Length is: {text_format.minute_format(estimated_time)} or {str(estimated_time)}s')
 
 if desired_vid_len > estimated_time:
     desired_vid_len = estimated_time
@@ -1311,7 +1178,7 @@ while estimate_time(get_sum_chars()) > desired_vid_len:
 
 estimated_time = estimate_time(get_sum_chars())
 
-print(f'Estimated Video Length is: {minute_format(estimated_time)} or {str(estimated_time)}s')
+print(f'Estimated Video Length is: {text_format.minute_format(estimated_time)} or {str(estimated_time)}s')
 print(f'Number of Comments: {number_comments}')
 print(f'Threshold: {threshold}')
 print(f'Subreddit: {reddit_post.subreddit}')
@@ -1353,14 +1220,14 @@ if pct_diff > 0:
 else:
     pct_diff = str(pct_diff)
 abs_diff = final.duration - estimated_time
-formatted_diff = minute_format(abs_diff)
+formatted_diff = text_format.minute_format(abs_diff)
 if float(abs_diff) > 0:
     formatted_diff = '+' + formatted_diff
 else:
     pass
 
-print(f'\n \nActual Video Length is: {minute_format(final.duration)} / {str(final.duration)}s. '
-      f'Shifted {formatted_diff} / {str(pct_diff)}% from {minute_format(estimated_time)} / {str(estimated_time)}s\n')
+print(f'\n \nActual Video Length is: {text_format.minute_format(final.duration)} / {str(final.duration)}s. '
+      f'Shifted {formatted_diff} / {str(pct_diff)}% from {text_format.minute_format(estimated_time)} / {str(estimated_time)}s\n')
 
 vid_name = str(submission.id)
 vid_extension = '.mp4'
