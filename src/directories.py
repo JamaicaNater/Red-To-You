@@ -18,3 +18,5 @@ def init():
     ICON_DIR = 'Static/Icons/'
     AUDIO_DIR = 'Static/Audio/'
     CLIPS_DIR = 'Static/Clips'
+
+init()

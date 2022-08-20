@@ -1,9 +1,11 @@
-def init():
+from PIL import Image
+import directories
+
+def init(mode, num_com):
     # Imported with Pillow
     global BACKGROUND
     global COMMENT_VOTE_ICON
-    global TITLE_VOTE_ICON
-    global COMMENT_VOTE_ICON
+    global TITLE_VOTE_ICON #unused
     global SUB_SCORE_ICON
     # Imported with Pillow - Thumbnail Items
     global ASKREDDIT_ICON
@@ -26,7 +28,7 @@ def init():
     global BODY_HEX
     global FOOTER_HEX
     global TITLE_HEX
-    global BIG_SCORE_HEX
+    global BIG_SCORE_HEX #unused
     global IMG_COLOR
     global TITLE_FOOTER
     global PARENT_FOOTER
@@ -76,7 +78,7 @@ def init():
         BIG_SCORE_HEX = '#818384'
         IMG_COLOR = '#1a1a1b'
 
-        TITLE_FOOTER = str(reddit_post.num_com) + ' Comments   Give Award   Share'
+        TITLE_FOOTER = str(num_com) + ' Comments   Give Award   Share'
         PARENT_FOOTER = 'Reply   Give Award  Share   Report   Save'
         CHILD_FOOTER = PARENT_FOOTER
 
@@ -100,7 +102,7 @@ def init():
         BIG_SCORE_HEX = '#646464'
         IMG_COLOR = '#222222'
 
-        TITLE_FOOTER = str(reddit_post.num_com) + ' comments  source  share  save  hide  give award  report  crosspost  ' \
+        TITLE_FOOTER = str(num_com) + ' comments  source  share  save  hide  give award  report  crosspost  ' \
                                                 ' hide all child comments'
         PARENT_FOOTER = 'permalink  source  embed  save  save-RES  report  give award  reply  hide child comments'
         CHILD_FOOTER = 'permalink  source  embed  save  save-RES  parent  report  give award  reply  hide child comments'

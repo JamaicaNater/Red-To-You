@@ -1,5 +1,6 @@
 import RedditItem
 import directories
+from formatting import ui
 
 import praw
 from moviepy.editor import *
@@ -45,7 +46,7 @@ else:
     speed = int(input('\nSpeed; 0 = Multithreaded, 1 = Normal '))
     reddit_link = input('\nLink; Paste your desired reddit post:\n')
     desired_vid_len = int(input('\nTime; Enter your maximum desired video length (seconds): '))
-    bgrd_choice = int(input('\nColor; Type your background color option [0 = Transparent, 1 = Default, 2 = Black]: '))
+    bgrd_choice = int(input('\nColor; Type your ui.BACKGROUND color option [0 = Transparent, 1 = Default, 2 = Black]: '))
     cust_title = input('\nTitle; Type a custom title for thumbnails, to  use default type 0\n')
 
 # Reddit Setup
@@ -53,9 +54,8 @@ reddit = praw.Reddit(client_id='BHUtkEY0x4vomA', client_secret='MZvTVUs83p8wEN_Z
                      user_agent='pulling posts')
 submission: Submission = reddit.submission(url=reddit_link)
 
-
-
 reddit_post = RedditItem.RedditItem(submission)
+ui.init(mode, reddit_post.num_com)
 
 number_comments = 25  # int(input('Type a Number Between 1 and 25 to represent the Number of Comments\n'))
 threshold = .3  # float(input('Type a number between 0 and 1 to represent the reply threshold (.33 recommended) \n'))
@@ -380,10 +380,10 @@ def create_img(comment):
     indent = 0
 
     # Fonts used in this function
-    body_font = ImageFont.truetype(BODY_FONT_DIR, 20)
-    author_font = ImageFont.truetype(AUTHOR_FONT_DIR, alt_font_size)
-    time_font = ImageFont.truetype(TIME_FONT_DIR, alt_font_size)
-    footer_font = ImageFont.truetype(FOOTER_FONT_DIR, redesign_footer_font)
+    body_font = ImageFont.truetype(ui.BODY_FONT_DIR, 20)
+    author_font = ImageFont.truetype(ui.AUTHOR_FONT_DIR, alt_font_size)
+    time_font = ImageFont.truetype(ui.TIME_FONT_DIR, alt_font_size)
+    footer_font = ImageFont.truetype(ui.FOOTER_FONT_DIR, redesign_footer_font)
 
     if use_reply(comment):
         formatted_reply = reply_list[index].split_self(rWidth)
@@ -416,7 +416,7 @@ def create_img(comment):
     ptnl_com_height = line_height + line_spacing * com_len + medium_space
     img_height = ptnl_com_height + rep_height + rtr_height + medium_space
 
-    img = Image.new('RGBA', (image_width, img_height), IMG_COLOR)
+    img = Image.new('RGBA', (image_width, img_height), ui.IMG_COLOR)
     draw = ImageDraw.Draw(img)
 
     author = comment_list[index].author
@@ -451,9 +451,9 @@ def create_img(comment):
         if num > 0:
             line_height += large_space
 
-            fttr = CHILD_FOOTER
+            fttr = ui.CHILD_FOOTER
         else:
-            fttr = PARENT_FOOTER
+            fttr = ui.PARENT_FOOTER
 
         if num == 1:
             box_hex = '#121212'
@@ -479,24 +479,24 @@ def create_img(comment):
             if num > 0:
                 draw.line((indent - 40, img_height - 5, indent - 40, auth_y), fill='#343536', width=5)
 
-        draw.text((auth_x, auth_y), auth, font=author_font, fill=AUTHOR_HEX)
-        draw.text((scr_x, scr_y), formatted_points, font=author_font, fill=SCORE_HEX)
-        draw.text((tm_x, tm_y), formatted_time, font=time_font, fill=FOOTER_HEX)
+        draw.text((auth_x, auth_y), auth, font=author_font, fill=ui.AUTHOR_HEX)
+        draw.text((scr_x, scr_y), formatted_points, font=author_font, fill=ui.SCORE_HEX)
+        draw.text((tm_x, tm_y), formatted_time, font=time_font, fill=ui.FOOTER_HEX)
 
-        img.paste(COMMENT_VOTE_ICON, (arrow_indent, line_height), COMMENT_VOTE_ICON)
+        img.paste(ui.COMMENT_VOTE_ICON, (arrow_indent, line_height), ui.COMMENT_VOTE_ICON)
         img.paste(gld_icon, (gld_x, gld_y), gld_icon)
 
         for line in fmt_com:
             line_height += line_spacing
             line_num = fmt_com.index(line)
-            draw.text((indent, line_height), line, font=body_font, fill=BODY_HEX)
+            draw.text((indent, line_height), line, font=body_font, fill=ui.BODY_HEX)
             img_path = directories.IMG_DIR + str(index) + '.' + str(num) + '.' + str(line_num) + '.png'
 
             if line == fmt_com[-1]:
                 line_height += medium_space
-                draw.text((indent, line_height), fttr, font=footer_font, fill=FOOTER_HEX)
+                draw.text((indent, line_height), fttr, font=footer_font, fill=ui.FOOTER_HEX)
 
-            temp = BACKGROUND.copy()
+            temp = ui.BACKGROUND.copy()
             temp.paste(img, (0, 540 - int(.5 * img_h)), img)
             temp.save(img_path)
 
@@ -699,12 +699,12 @@ def create_sub():
     body_nolinks = re.sub(r'https?:\/\/.*[\r\n]*', '', body_nolinks)
     body_nolinks = replace_me(body_nolinks, all_rep, all_rep_with)
 
-    author_font = ImageFont.truetype(AUTHOR_FONT_DIR, 15)
-    score_font = ImageFont.truetype(SCORE_FONT_DIR, size - 3)
-    title_font = ImageFont.truetype(TITLE_FONT_DIR, size)
-    body_font = ImageFont.truetype(BODY_FONT_DIR, size - 2)
-    sub_font = ImageFont.truetype(SUB_FONT_DIR, size - 6)
-    footer_font = ImageFont.truetype(FOOTER_FONT_DIR, size - 6)
+    author_font = ImageFont.truetype(ui.AUTHOR_FONT_DIR, 15)
+    score_font = ImageFont.truetype(ui.SCORE_FONT_DIR, size - 3)
+    title_font = ImageFont.truetype(ui.TITLE_FONT_DIR, size)
+    body_font = ImageFont.truetype(ui.BODY_FONT_DIR, size - 2)
+    sub_font = ImageFont.truetype(ui.SUB_FONT_DIR, size - 6)
+    footer_font = ImageFont.truetype(ui.FOOTER_FONT_DIR, size - 6)
 
     formatted_title = textwrap.wrap(reddit_post.title, width=width)
     formatted_body = textwrap.wrap(body_nolinks, width=width + 8)
@@ -723,7 +723,7 @@ def create_sub():
     sub_height = (15 + line_height + len(formatted_title) * line_spacing + 2 * small_space + large_space +
                   len(formatted_body) * line_spacing + 2 * medium_space)
 
-    sub_img = Image.new('RGBA', (1920, sub_height), IMG_COLOR)  # from #222222
+    sub_img = Image.new('RGBA', (1920, sub_height), ui.IMG_COLOR)  # from #222222
     sub_draw = ImageDraw.Draw(sub_img)
 
     # Draws rectangle at current height
@@ -736,12 +736,12 @@ def create_sub():
     # Draws the score and icon
     point_len = len(formatted_points.replace('.', ''))
     indent = 5 * (5 - point_len)
-    sub_img.paste(SUB_SCORE_ICON, (15, line_height + 2), SUB_SCORE_ICON)
-    sub_draw.text((indent, line_height + 26), formatted_points, font=score_font, fill=BIG_SCORE_HEX)
+    sub_img.paste(ui.SUB_SCORE_ICON, (15, line_height + 2), ui.SUB_SCORE_ICON)
+    sub_draw.text((indent, line_height + 26), formatted_points, font=score_font, fill=ui.BIG_SCORE_HEX)
 
     # Writes each line in the title @
     for line in formatted_title:
-        sub_draw.text((indent_spacing, line_height), line, font=title_font, fill=TITLE_HEX)
+        sub_draw.text((indent_spacing, line_height), line, font=title_font, fill=ui.TITLE_HEX)
         if line == formatted_title[-1]:
             the_sizex, the_sizey = title_font.getsize(formatted_title[-1])
             sub_draw.text((indent_spacing + the_sizex + 5, line_height + 5), f'(self.{str(reddit_post.subreddit)})',
@@ -751,12 +751,12 @@ def create_sub():
 
     # Adds spacing then writes the post date and author
     line_height += small_space
-    sub_draw.text((indent_spacing, line_height), post_date_by, font=author_font, fill=TIME_HEX)
+    sub_draw.text((indent_spacing, line_height), post_date_by, font=author_font, fill=ui.TIME_HEX)
     rrx, rry = author_font.getsize(post_date_by)
-    sub_draw.text((indent_spacing + rrx, line_height), ' ' + str(reddit_post.author), font=author_font, fill=AUTHOR_HEX)
+    sub_draw.text((indent_spacing + rrx, line_height), ' ' + str(reddit_post.author), font=author_font, fill=ui.AUTHOR_HEX)
     line_height += small_space
 
-    temp = BACKGROUND.copy()
+    temp = ui.BACKGROUND.copy()
 
     filename = directories.TXT_DIR + 'title.txt'
     with open(filename, 'w', encoding='utf-8') as title_txt:  # for some reason as of 6/17/19 1:10 AM IT NEEDS ENCODING
@@ -828,7 +828,7 @@ def create_sub():
 
             if line == formatted_body[-1]:
                 line_height += medium_space
-                sub_draw.text((indent_spacing, line_height), TITLE_FOOTER, font=footer_font, fill=FOOTER_HEX)
+                sub_draw.text((indent_spacing, line_height), ui.TITLE_FOOTER, font=footer_font, fill=ui.FOOTER_HEX)
             temp.paste(sub_img, (0, 540 - int(.5 * sub_height)), sub_img)
 
             temp.save(directories.IMG_DIR + f'body.{index}.png')
@@ -846,7 +846,7 @@ def create_sub():
     else:
         # Places Space Then Draws Footer
         line_height += medium_space + more_spacing
-        sub_draw.text((indent_spacing, line_height), TITLE_FOOTER, font=footer_font, fill=FOOTER_HEX)
+        sub_draw.text((indent_spacing, line_height), ui.TITLE_FOOTER, font=footer_font, fill=ui.FOOTER_HEX)
 
         temp.paste(sub_img, (0, 540 - int(.5 * sub_height)), sub_img)
         temp.save(directories.IMG_DIR + 'title.png')
@@ -915,7 +915,7 @@ def create_thumbnail():
     def color_options():
         """
         Function:   color_options
-        Definition: Accepts user input for preferred background color
+        Definition: Accepts user input for preferred ui.BACKGROUND color
         Parameter:  NONE
         Return:     NONE
         """
@@ -949,7 +949,7 @@ def create_thumbnail():
     width = 31
     formatted_title = textwrap.wrap(title, width=width)
 
-    icon_w, icon_h = ASKREDDIT_ICON.size
+    icon_w, icon_h = ui.ASKREDDIT_ICON.size
 
     size = 90
     sub_font = ImageFont.truetype('CustFont/NimbusSanL-Reg.ttf', 75)
@@ -961,9 +961,9 @@ def create_thumbnail():
     indent_spacing = 40
     point_x, point_y = -40, 720
 
-    # thumbnail.paste(COMMENT_ICON, (300, 850), COMMENT_ICON)
-    # thumbnail.paste(UPDOWNVOTE, (point_x, point_y), UPDOWNVOTE)
-    thumbnail.paste(ASKREDDIT_ICON, (40, 40), ASKREDDIT_ICON)
+    # thumbnail.paste(ui.COMMENT_ICON, (300, 850), ui.COMMENT_ICON)
+    # thumbnail.paste(ui.UPDOWNVOTE, (point_x, point_y), ui.UPDOWNVOTE)
+    thumbnail.paste(ui.ASKREDDIT_ICON, (40, 40), ui.ASKREDDIT_ICON)
 
     thumb_draw.text((icon_w + indent_spacing + 30, 120), f'submitted {human_time(sub_time)} by {author}',
                     font=author_font, fill='#818384')
@@ -1342,8 +1342,8 @@ shuffle(main_clips)
 final.extend(main_clips)
 final.append(OUTRO)
 final = concatenate_videoclips(final)
-background_music = song_sound.set_duration(final.duration)
-final_audio = CompositeAudioClip([final.audio, background_music])
+ui.BACKGROUND_music = song_sound.set_duration(final.duration)
+final_audio = CompositeAudioClip([final.audio, ui.BACKGROUND_music])
 final = final.set_audio(final_audio)
 
 # Used to compare the estimated video length the the actual length
