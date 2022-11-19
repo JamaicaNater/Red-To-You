@@ -9,12 +9,6 @@ praw (library for interacting with reddit's API)
 
 PIL (library for image creation)
 
-time
-
-datetime
-
-shutil (for file deletion)
-
 re
 
 glob (to import files matching a specific pattern)
@@ -38,6 +32,14 @@ mp3_tagger (gets information from the mp3 files in the mp3 folder)
 itertools
 
 In addition, you will need to provide your own NewError.mp4 (transiton) and outro.mp4 (video outro) in the Static folder as well as populate your own tagged music (mp3) in Static/DynamicMusic
+
+# Setup
+First, you will need to create a virtual envirionment. After, you will need to activate this environment then you will need to install the dependencies needed by the program by using shell.
+```
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
 # Using the Program
 Upon launching the program, the user will be asked whether they would like to have their video created using the classic version of reddit or the redesigned version of reddit 
