@@ -13,6 +13,7 @@ import datetime
 import shutil
 import re
 import glob
+import os
 from random import shuffle
 import threading
 import timeit
@@ -51,8 +52,8 @@ else:
     cust_title = input('\nTitle; Type a custom title for thumbnails, to  use default type 0\n')
 
 # Reddit Setup
-reddit = praw.Reddit(client_id='BHUtkEY0x4vomA', client_secret='MZvTVUs83p8wEN_Z8EU8bIUjGTY',
-                     user_agent='pulling posts')
+reddit = praw.Reddit(client_id=os.getenv('REDDIT_CLIENT_ID'), client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
+                     user_agent='Red-To-You')
 submission: Submission = reddit.submission(url=reddit_link)
 
 reddit_post = RedditItem.RedditItem(submission)
