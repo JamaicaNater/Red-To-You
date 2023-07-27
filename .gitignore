@@ -1,6 +1,12 @@
+.idea
+.vscode
+
+src/Subs
+
 venv/
 Lib/
 Scripts/
 Include/
 pyvenv.cfg
 src/__pycache__/
+.env

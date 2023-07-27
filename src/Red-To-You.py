@@ -24,6 +24,8 @@ from praw.models import Submission
 from sklearn import linear_model
 from mp3_tagger import MP3File, VERSION_1, VERSION_2, VERSION_BOTH
 import moviepy
+import logging
+from dotenv import load_dotenv
 
 """
 Word                    Definition
@@ -33,6 +35,8 @@ threshold               Factor of the minimum score criteria of a comment eg. by
 balcon                  Text To Speech Command Line Utility
 """
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+load_dotenv()
 debug = True
 
 # User Input
@@ -52,7 +56,7 @@ else:
     cust_title = input('\nTitle; Type a custom title for thumbnails, to  use default type 0\n')
 
 # Reddit Setup
-reddit = praw.Reddit(client_id=os.getenv('REDDIT_CLIENT_ID'), client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
+reddit = praw.Reddit(client_id=os.getenv('CLIENT_ID'), client_secret=os.getenv('CLIENT_SECRET'),
                      user_agent='Red-To-You')
 submission: Submission = reddit.submission(url=reddit_link)
 
@@ -188,7 +192,7 @@ def populate_lists():
 
         comment_list.append(RedditItem.RedditItem(temp_com, temp_name, temp_score, temp_time, temp_gildings))
         str_comment_list.append(comment_list[i].body)
-        # print(temp_gildings)
+        # logging.info(temp_gildings)
         del temp_com
         del temp_name
         del temp_score
@@ -473,7 +477,7 @@ def create_wav(comment):
         wav_file = str(index) + '.%s.wav' % num
         command = f'balcon -f "Subs\\Sub1\\Txt\\{txt_file}" -w "Subs\\Sub1\\Wav\\{wav_file}" -n "Microsoft Hazel Desktop"'
         os.system(command)
-        # print(command)
+        # logging.info(command)
 
     balcon(0)
     if use_reply(comment):
@@ -523,7 +527,7 @@ def create_clip(comment):
         path = directories.IMG_DIR + str(index) + '.0' + '.%s.png' % split_com.index(string)
         clip = ImageClip(path).set_duration(factor * a_clip0.duration)
         i_clip0.append(clip)
-        # print(path)
+        # logging.info(path)
 
     s0 = '\ndone comment: ' + str(index)
     i_clip0 = concatenate_videoclips(i_clip0)
@@ -538,7 +542,7 @@ def create_clip(comment):
             path = directories.IMG_DIR + str(index) + '.1' + '.%s.png' % split_rep.index(rString)
             clip = ImageClip(path).set_duration(factor * a_clip1.duration)
             i_clip1.append(clip)
-            # print(path)
+            # logging.info(path)
 
         s1 = '\n\tdone reply: ' + str(index)
         i_clip1 = concatenate_videoclips(i_clip1)
@@ -556,7 +560,7 @@ def create_clip(comment):
             path = directories.IMG_DIR + str(index) + '.2' + '.%s.png' % split_rtr.index(rtrString)
             clip = ImageClip(path).set_duration(factor * a_clip2.duration)
             i_clip2.append(clip)
-            # print(path)
+            # logging.info(path)
         s2 = '\n\t\tdone rtr: ' + str(index)
         i_clip2 = concatenate_videoclips(i_clip2)
         i_clip2 = i_clip2.set_audio(a_clip2)
@@ -723,7 +727,7 @@ def create_sub():
             temp.save(directories.IMG_DIR + f'body.{index}.png')
 
             factor = len(line)/sum_body
-            # print(str(factor))
+            # logging.info(str(factor))
             body_iclips.append(ImageClip(directories.IMG_DIR + f'body.{index}.png').set_duration(factor * body_aclip.duration))
         del line
 
@@ -758,38 +762,38 @@ def cleanup():
     """
     global del_vid
     shutil.rmtree(directories.IMG_DIR)
-    print('Removed IMG')
+    logging.info('Removed IMG')
     time.sleep(.05)
     os.mkdir(directories.IMG_DIR)
-    print("Created IMG")
+    logging.info("Created IMG")
 
     shutil.rmtree(directories.TXT_DIR)
-    print('Removed TXT')
+    logging.info('Removed TXT')
     time.sleep(.05)
     os.mkdir(directories.TXT_DIR)
-    print('Created TXT')
+    logging.info('Created TXT')
 
     shutil.rmtree(directories.WAV_DIR)
-    print('Removed WAV')
+    logging.info('Removed WAV')
     time.sleep(.05)
     os.mkdir(directories.WAV_DIR)
-    print('Created WAV')
+    logging.info('Created WAV')
 
     if os.path.isfile('Upload/Final.mp4'):
         os.remove('Upload/Final.mp4')
-        print('Removed Vid Copy')
+        logging.info('Removed Vid Copy')
     if os.path.isfile('Upload/thumb.png'):
         os.remove('Upload/thumb.png')
-        print('Removed Thumb Copy')
+        logging.info('Removed Thumb Copy')
     if not os.path.isdir(directories.VID_DIR):
         os.mkdir(directories.VID_DIR)
-        print("VID DNE ... Making VID")
+        logging.info("VID DNE ... Making VID")
     if del_vid and os.path.isdir(directories.VID_DIR):
         shutil.rmtree(directories.VID_DIR)
-        print('Removed VID')
+        logging.info('Removed VID')
         time.sleep(.05)
         os.mkdir(directories.VID_DIR)
-        print("Created VID")
+        logging.info("Created VID")
 
     del_vid = False
 
@@ -817,13 +821,13 @@ def create_thumbnail():
         elif bgrd_choice == 2:
             color = 'black'
         else:
-            print('Choice is not recognized reverting to defaults')
+            logging.info('Choice is not recognized reverting to defaults')
             color = '#222222'
         return color
 
     # date = datetime.datetime.fromtimestamp(submission.created_utc)
     # dif = datetime.datetime.utcnow() - date
-    # print(dif)
+    # logging.info(dif)
 
     sub_time = reddit_post.created
     subreddit = 'r/' + str(reddit_post.subreddit)
@@ -862,7 +866,7 @@ def create_thumbnail():
     # thumb_draw.text((500, 900), str(text_format.abbreviate_number(num_com)) + '  Comments', font=score_font, fill='#818384')
 
     line_height_thumb = base_height
-    # print(str(len(formatted_title) * (size + line_spacing)))
+    # logging.info(str(len(formatted_title) * (size + line_spacing)))
     count_1 = 0
     count_2 = 0
     min_b, max_b = 1180, 1400  # From 1020, 1200
@@ -887,8 +891,8 @@ def create_thumbnail():
             break
         if count_2 >= 35:
             break
-    # print(str(len(formatted_title) * (size + line_spacing)))
-    # print(count_1, count_2)
+    # logging.info(str(len(formatted_title) * (size + line_spacing)))
+    # logging.info(count_1, count_2)
     for line in formatted_title:
         body_font = ImageFont.truetype('CustFont/American_Captain.ttf', size)
 
@@ -990,23 +994,23 @@ def video_creation(comment):
     sp0 = directories.WAV_DIR + str(index) + '.0.wav'
     sp1 = directories.WAV_DIR + str(index) + '.1.wav'
     sp2 = directories.WAV_DIR + str(index) + '.2.wav'
-    # print(sp0)
-    # print(sp1)
-    # print(sp2)
+    # logging.info(sp0)
+    # logging.info(sp1)
+    # logging.info(sp2)
     while not os.path.isfile(sp0):
-        print(sp0)
+        logging.info(sp0)
         time.sleep(.3)
-        print("waiting for comment:" + str(index))
+        logging.info("waiting for comment:" + str(index))
     if use_reply(comment):
         while not os.path.isfile(sp1):
             time.sleep(.3)
-            print("waiting for reply:" + str(index))
+            logging.info("waiting for reply:" + str(index))
     else:
         pass
     if use_rtr(comment):
         while not os.path.isfile(sp2):
             time.sleep(.3)
-            print("waiting for comment:" + str(index))
+            logging.info("waiting for comment:" + str(index))
     else:
         pass
     # time.sleep(3)
@@ -1054,7 +1058,7 @@ def metadata():
         #     'latitude': 48.8584,
         #     'longitude': 2.2945
     }
-    # print(data['description'])
+    # logging.info(data['description'])
     with open(UPLOAD_DIR + 'data.json', 'w') as f:
         json.dump(data, f)
     with open(directories.VID_DIR + 'description.txt', 'w', encoding='utf-8') as desc:
@@ -1079,7 +1083,7 @@ def upload_video():
     command.append('-metaJSON string ' + 'data.json')
     command = ''.join(command)
     os.system(command)
-    print(command)
+    logging.info(command)
 
 
 def get_sum_chars():
@@ -1104,144 +1108,144 @@ def get_sum_chars():
             pass
     return char_sum
 
+if __name__ == '__main__':
+    # Initialize useful lists
+    main_clips = []
+    comment_list = []
+    str_comment_list = []
+    reply_list = []
+    rtr_list = []
+    # Replacement lists
+    aud_rep, aud_rep_with = ['’', '‘', '”', '“', '*', ';', '^', '\\', '/', '_'], \
+                            ["'", "'", '"', '"', '', '', '', '', '', ' ']
+    viz_rep, viz_rep_with = [], []
+    all_rep, all_rep_with = ['&#x200B'], ['']
 
-# Initialize useful lists
-main_clips = []
-comment_list = []
-str_comment_list = []
-reply_list = []
-rtr_list = []
-# Replacement lists
-aud_rep, aud_rep_with = ['’', '‘', '”', '“', '*', ';', '^', '\\', '/', '_'], \
-                        ["'", "'", '"', '"', '', '', '', '', '', ' ']
-viz_rep, viz_rep_with = [], []
-all_rep, all_rep_with = ['&#x200B'], ['']
+    # if these values are not changed the tts engine will read the arcronyms, leading to mispronunciations
+    aita_1, aita_2 = utils.insensitive_replace_list(
+        ['aita', 'yta', 'nta', 'esh'],
+        ['am i the asshole', 'you\'re the asshole', 'not the asshole', 'everyone sucks here']
+    )
 
-# if these values are not changed the tts engine will read the arcronyms, leading to mispronunciations
-aita_1, aita_2 = utils.insensitive_replace_list(
-    ['aita', 'yta', 'nta', 'esh'],
-    ['am i the asshole', 'you\'re the asshole', 'not the asshole', 'everyone sucks here']
-)
+    # if these values are not changed the tts engine will read the arcronyms, leading to mispronunciations
+    sms_1, sms_2 = utils.insensitive_replace_list(
+        ['lol ', 'lol.', 'jk', 'smh', 'stfu', 'nvm', 'tbh', 'tifu'],
+        ['el oh el', 'el oh el.', 'just kidding', 'shake my head', 'shut the fuck up', 'nevermind', 'to be honest', 'today i fucked up']
+    )
 
-# if these values are not changed the tts engine will read the arcronyms, leading to mispronunciations
-sms_1, sms_2 = utils.insensitive_replace_list(
-    ['lol ', 'lol.', 'jk', 'smh', 'stfu', 'nvm', 'tbh', 'tifu'],
-    ['el oh el', 'el oh el.', 'just kidding', 'shake my head', 'shut the fuck up', 'nevermind', 'to be honest', 'today i fucked up']
-)
+    # These are words that the TTS engine often mispronounces
+    common_mispronunciations_1, common_mispronunciations_2 = utils.insensitive_replace_list(
+        ['coworker', 'facebook'],
+        ['co-worker', 'face book']
+    )
+    # Censors swear words
+    swear_1, swear_2 = utils.insensitive_replace_list(
+        ['fuck', 'shit', 'bitch'],
+        ['uck', 'sit', 'itch']
+    )
 
-# These are words that the TTS engine often mispronounces
-common_mispronunciations_1, common_mispronunciations_2 = utils.insensitive_replace_list(
-    ['coworker', 'facebook'],
-    ['co-worker', 'face book']
-)
-# Censors swear words
-swear_1, swear_2 = utils.insensitive_replace_list(
-    ['fuck', 'shit', 'bitch'],
-    ['uck', 'sit', 'itch']
-)
+    # Appends replacement lists in a way that saves space
+    aud_rep.extend(aita_1)
+    aud_rep_with.extend(aita_2)
+    aud_rep.extend(sms_1)
+    aud_rep_with.extend(sms_2)
+    all_rep.extend(swear_1)
+    all_rep_with.extend(swear_2)
 
-# Appends replacement lists in a way that saves space
-aud_rep.extend(aita_1)
-aud_rep_with.extend(aita_2)
-aud_rep.extend(sms_1)
-aud_rep_with.extend(sms_2)
-all_rep.extend(swear_1)
-all_rep_with.extend(swear_2)
-
-del_vid = True
-cleanup()
-
-
-create_thumbnail()
-# Pulls data for the program from Reddit at once
-populate_lists()
-
-# This block is used for getting the video length within a certain range
-estimated_time = estimate_time(get_sum_chars())
-print(f'\nMaximum Video Length is: {text_format.minute_format(estimated_time)} or {str(estimated_time)}s')
-
-if desired_vid_len > estimated_time:
-    desired_vid_len = estimated_time
-    print(f'\nInput exceeds maximum time of {estimated_time}s for this reddit post, setting time to {estimated_time}')
-
-while estimate_time(get_sum_chars()) > desired_vid_len:
-    number_comments -= 1
-    if estimate_time(get_sum_chars()) <= desired_vid_len:
-        break
-
-    threshold += .04
-    if estimate_time(get_sum_chars()) <= desired_vid_len:
-        break
-
-    if threshold > .8:
-        threshold = .3      # reset threshold if it gets too high
+    del_vid = True
+    cleanup()
 
 
-estimated_time = estimate_time(get_sum_chars())
+    create_thumbnail()
+    # Pulls data for the program from Reddit at once
+    populate_lists()
 
-print(f'Estimated Video Length is: {text_format.minute_format(estimated_time)} or {str(estimated_time)}s')
-print(f'Number of Comments: {number_comments}')
-print(f'Threshold: {threshold}')
-print(f'Subreddit: {reddit_post.subreddit}')
+    # This block is used for getting the video length within a certain range
+    estimated_time = estimate_time(get_sum_chars())
+    logging.info(f'\nMaximum Video Length is: {text_format.minute_format(estimated_time)} or {str(estimated_time)}s')
 
-dynamic_music()
+    if desired_vid_len > estimated_time:
+        desired_vid_len = estimated_time
+        logging.info(f'\nInput exceeds maximum time of {estimated_time}s for this reddit post, setting time to {estimated_time}')
 
-final = [create_sub()]
+    while estimate_time(get_sum_chars()) > desired_vid_len:
+        number_comments -= 1
+        if estimate_time(get_sum_chars()) <= desired_vid_len:
+            break
 
-# Used for multithreading purposes if the option is selected
-thread = []  # 'thread' is used to keep track of all running threads so that they can be joined
-if speed == 0:
-    for com in str_comment_list[:number_comments]:
-        ind = str_comment_list.index(com)
-        temp_thread = threading.Thread(target=video_creation, args=(com,))
-        thread.append(temp_thread)
-        thread[ind].start()
+        threshold += .04
+        if estimate_time(get_sum_chars()) <= desired_vid_len:
+            break
 
-    for com in str_comment_list[:number_comments]:
-        ind = str_comment_list.index(com)
-        thread[ind].join()
+        if threshold > .8:
+            threshold = .3      # reset threshold if it gets too high
 
-else:
-    for com in str_comment_list[:number_comments]:
-        video_creation(com)
 
-# This combines all the clips created in the multithreaded workload to one video and sets the audio to the dynamic audio
-shuffle(main_clips)
-final.extend(main_clips)
-final.append(OUTRO)
-final = concatenate_videoclips(final)
-ui.BACKGROUND_music = song_sound.set_duration(final.duration)
-final_audio = CompositeAudioClip([final.audio, ui.BACKGROUND_music])
-final = final.set_audio(final_audio)
+    estimated_time = estimate_time(get_sum_chars())
 
-# Used to compare the estimated video length the the actual length
-pct_diff = round(100 - (abs(estimated_time / final.duration) * 100), 2)
-if pct_diff > 0:
-    pct_diff = '+' + str(pct_diff)
-else:
-    pct_diff = str(pct_diff)
-abs_diff = final.duration - estimated_time
-formatted_diff = text_format.minute_format(abs_diff)
-if float(abs_diff) > 0:
-    formatted_diff = '+' + formatted_diff
-else:
-    pass
+    logging.info(f'Estimated Video Length is: {text_format.minute_format(estimated_time)} or {str(estimated_time)}s')
+    logging.info(f'Number of Comments: {number_comments}')
+    logging.info(f'Threshold: {threshold}')
+    logging.info(f'Subreddit: {reddit_post.subreddit}')
 
-print(f'\n \nActual Video Length is: {text_format.minute_format(final.duration)} / {str(final.duration)}s. '
-      f'Shifted {formatted_diff} / {str(pct_diff)}% from {text_format.minute_format(estimated_time)} / {str(estimated_time)}s\n')
+    dynamic_music()
 
-vid_name = str(submission.id)
-vid_extension = '.mp4'
-video_path = directories.VID_DIR + vid_name + vid_extension
-final.write_videofile(video_path, fps=VID_FPS, threads=16, preset='ultrafast')
+    final = [create_sub()]
 
-metadata()
-# upload_video()
+    # Used for multithreading purposes if the option is selected
+    thread = []  # 'thread' is used to keep track of all running threads so that they can be joined
+    if speed == 0:
+        for com in str_comment_list[:number_comments]:
+            ind = str_comment_list.index(com)
+            temp_thread = threading.Thread(target=video_creation, args=(com,))
+            thread.append(temp_thread)
+            thread[ind].start()
 
-# Collects data to help improve the program's predictions
-data_collection()
-print('\n')
-cleanup()
+        for com in str_comment_list[:number_comments]:
+            ind = str_comment_list.index(com)
+            thread[ind].join()
 
-print('\nClosing in 10 seconds')
-time.sleep(10)
+    else:
+        for com in str_comment_list[:number_comments]:
+            video_creation(com)
+
+    # This combines all the clips created in the multithreaded workload to one video and sets the audio to the dynamic audio
+    shuffle(main_clips)
+    final.extend(main_clips)
+    final.append(OUTRO)
+    final = concatenate_videoclips(final)
+    ui.BACKGROUND_music = song_sound.set_duration(final.duration)
+    final_audio = CompositeAudioClip([final.audio, ui.BACKGROUND_music])
+    final = final.set_audio(final_audio)
+
+    # Used to compare the estimated video length the the actual length
+    pct_diff = round(100 - (abs(estimated_time / final.duration) * 100), 2)
+    if pct_diff > 0:
+        pct_diff = '+' + str(pct_diff)
+    else:
+        pct_diff = str(pct_diff)
+    abs_diff = final.duration - estimated_time
+    formatted_diff = text_format.minute_format(abs_diff)
+    if float(abs_diff) > 0:
+        formatted_diff = '+' + formatted_diff
+    else:
+        pass
+
+    logging.info(f'\n \nActual Video Length is: {text_format.minute_format(final.duration)} / {str(final.duration)}s. '
+        f'Shifted {formatted_diff} / {str(pct_diff)}% from {text_format.minute_format(estimated_time)} / {str(estimated_time)}s\n')
+
+    vid_name = str(submission.id)
+    vid_extension = '.mp4'
+    video_path = directories.VID_DIR + vid_name + vid_extension
+    final.write_videofile(video_path, fps=VID_FPS, threads=16, preset='ultrafast')
+
+    metadata()
+    # upload_video()
+
+    # Collects data to help improve the program's predictions
+    data_collection()
+    logging.info('\n')
+    cleanup()
+
+    logging.info('\nClosing in 10 seconds')
+    time.sleep(10)
